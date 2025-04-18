@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Echker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      .sidebar-item {
+        @apply flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-800 rounded-lg transition-colors duration-150;
+      }
+      .sidebar-item.active {
+        @apply bg-blue-100 text-blue-800;
+      }
+      .sidebar-icon {
+        @apply mr-3 text-lg;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Top Navigation Bar -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+      <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <!-- Sidebar toggle button -->
+          <button id="sidebar-toggle" class="p-1 mr-3 text-gray-500 hover:text-gray-700 focus:outline-none">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+          <h1 class="text-2xl font-bold text-gray-900">Echker</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button class="p-1 rounded-full text-gray-500 hover:text-gray-700 focus:outline-none">
+            <i class="fas fa-cog text-xl"></i>
+          </button>
+          <button class="p-1 rounded-full text-gray-500 hover:text-gray-700 focus:outline-none">
+            <i class="fas fa-user-circle text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Sidebar Navigation -->
+      <aside id="sidebar" class="w-64 bg-white shadow-md block transition-all duration-300 ease-in-out">
+        <nav class="mt-5 px-2 py-3">
+          <div class="py-2">
+            <a href="#dashboard" class="sidebar-item active block w-full mb-1" data-page="dashboard">
+              <i class="fas fa-home sidebar-icon"></i>
+              <span>Dashboard</span>
+            </a>
+          </div>
+          <div class="py-2 border-t border-gray-200">
+            <a href="#tracking" class="sidebar-item block w-full mb-1" data-page="tracking">
+              <i class="fas fa-chart-line sidebar-icon"></i>
+              <span>Tracking</span>
+            </a>
+          </div>
+          <div class="py-2 border-t border-gray-200">
+            <a href="#anomaly" class="sidebar-item block w-full mb-1" data-page="anomaly">
+              <i class="fas fa-exclamation-triangle sidebar-icon"></i>
+              <span>Anomaly Detection</span>
+            </a>
+          </div>
+          <div class="py-2 border-t border-gray-200">
+            <a href="#settings" class="sidebar-item block w-full mb-1" data-page="settings">
+              <i class="fas fa-cog sidebar-icon"></i>
+              <span>Settings</span>
+            </a>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Mobile Menu Button (visible only on mobile) -->
+      <div class="md:hidden fixed bottom-4 right-4 z-20">
+        <button id="mobile-menu-button" class="bg-blue-600 text-white p-3 rounded-full shadow-lg">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto p-4">
+        <!-- Content Pages (only one visible at a time) -->
+        <div id="dashboard-page" class="page active">
+          <h2 class="text-2xl font-semibold mb-4">Dashboard</h2>
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <p class="text-gray-700">Welcome to Echker Dashboard</p>
+            <p id="serverStatus" class="text-gray-500 mt-4">Checking server status...</p>
+          </div>
+        </div>
+
+        <div id="tracking-page" class="page hidden">
+          <h2 class="text-2xl font-semibold mb-4">Tracking</h2>
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <p class="text-gray-700">Track your metrics and performance data here.</p>
+            <div class="mt-4 h-64 bg-gray-100 rounded flex items-center justify-center">
+              <p class="text-gray-500">Tracking charts will appear here</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="anomaly-page" class="page hidden">
+          <h2 class="text-2xl font-semibold mb-4">Anomaly Detection</h2>
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <p class="text-gray-700">Monitor and detect anomalies in your system.</p>
+            <div class="mt-4 h-64 bg-gray-100 rounded flex items-center justify-center">
+              <p class="text-gray-500">Anomaly detection visualizations will appear here</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="settings-page" class="page hidden">
+          <h2 class="text-2xl font-semibold mb-4">Settings</h2>
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <p class="text-gray-700">Configure your application settings here.</p>
+            <div class="mt-4">
+              <h3 class="font-medium mb-2">Preferences</h3>
+              <div class="space-y-2">
+                <div class="flex items-center">
+                  <input type="checkbox" id="notifications" class="mr-2">
+                  <label for="notifications">Enable notifications</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" id="darkmode" class="mr-2">
+                  <label for="darkmode">Dark mode</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- JavaScript for navigation -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Page navigation
+        const pages = document.querySelectorAll('.page');
+        const sidebarItems = document.querySelectorAll('.sidebar-item');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const mainContent = document.querySelector('main');
+        let sidebarCollapsed = false;
+        
+        // Function to show selected page and highlight correct sidebar item
+        function navigateToPage(pageId) {
+          // Hide all pages
+          pages.forEach(page => page.classList.add('hidden'));
+          
+          // Show selected page
+          document.getElementById(pageId + '-page').classList.remove('hidden');
+          
+          // Update active sidebar item
+          sidebarItems.forEach(item => {
+            if (item.getAttribute('data-page') === pageId) {
+              item.classList.add('active');
+            } else {
+              item.classList.remove('active');
+            }
+          });
+        }
+        
+        // Toggle sidebar collapse
+        function toggleSidebar() {
+          sidebarCollapsed = !sidebarCollapsed;
+          
+          if (sidebarCollapsed) {
+            sidebar.classList.remove('w-64');
+            sidebar.classList.add('w-16');
+            sidebar.querySelectorAll('.sidebar-item span').forEach(span => {
+              span.classList.add('hidden');
+            });
+            mainContent.classList.add('ml-16');
+          } else {
+            sidebar.classList.add('w-64');
+            sidebar.classList.remove('w-16');
+            sidebar.querySelectorAll('.sidebar-item span').forEach(span => {
+              span.classList.remove('hidden');
+            });
+            mainContent.classList.remove('ml-16');
+          }
+        }
+        
+        // Add click event listener to sidebar toggle
+        sidebarToggle.addEventListener('click', toggleSidebar);
+        
+        // Add click event listeners to sidebar items
+        sidebarItems.forEach(item => {
+          item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const pageId = this.getAttribute('data-page');
+            navigateToPage(pageId);
+            // Update URL hash
+            window.location.hash = pageId;
+            
+            // On mobile, close the sidebar when an item is clicked
+            if (window.innerWidth < 768) {
+              sidebar.classList.add('hidden');
+            }
+          });
+        });
+        
+        // Handle navigation based on URL hash
+        function handleHashChange() {
+          const hash = window.location.hash.substring(1);
+          if (hash && document.querySelector(`[data-page="${hash}"]`)) {
+            navigateToPage(hash);
+          } else if (window.location.hash === '') {
+            // Default to dashboard if no hash
+            navigateToPage('dashboard');
+          }
+        }
+        
+        // Listen for hash changes
+        window.addEventListener('hashchange', handleHashChange);
+        
+        // Initial navigation
+        handleHashChange();
+        
+        // Mobile menu functionality
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        
+        mobileMenuButton.addEventListener('click', function() {
+          sidebar.classList.toggle('hidden');
+          sidebar.classList.toggle('fixed');
+          sidebar.classList.toggle('inset-0');
+          sidebar.classList.toggle('z-10');
+          sidebar.classList.toggle('md:block');
+        });
+        
+        // Responsive handling
+        function handleResponsiveLayout() {
+          if (window.innerWidth < 768) {
+            sidebar.classList.add('hidden');
+            sidebarCollapsed = false;
+            sidebar.classList.add('w-64');
+            sidebar.classList.remove('w-16');
+            sidebar.querySelectorAll('.sidebar-item span').forEach(span => {
+              span.classList.remove('hidden');
+            });
+          } else {
+            sidebar.classList.remove('hidden', 'fixed', 'inset-0', 'z-10');
+          }
+        }
+        
+        // Initial responsive setup
+        handleResponsiveLayout();
+        
+        // Listen for window resize events
+        window.addEventListener('resize', handleResponsiveLayout);
+        
+        // Check server status
+        fetch('/api/health')
+          .then(response => response.json())
+          .then(data => {
+            document.getElementById('serverStatus').textContent = 
+              `Backend status: ${data.status}`;
+          })
+          .catch(error => {
+            document.getElementById('serverStatus').textContent = 
+              `Backend error: ${error.message}`;
+          });
+      });
+    </script>
+  </body>
+</html>
