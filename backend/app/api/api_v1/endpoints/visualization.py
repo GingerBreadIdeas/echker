@@ -123,6 +123,19 @@ def get_message_embeddings_json(
     created_dates = [msg.created_at.strftime("%Y-%m-%d %H:%M:%S") for msg in messages]
     is_prompt_injection = [msg.is_prompt_injection for msg in messages]
     
+    # Truncate long messages for the data table (preserve full text for hover)
+    truncated_texts = []
+    hover_texts = []
+    for text in texts:
+        # Truncate for table view
+        trunc = text[:100] + "..." if len(text) > 100 else text
+        truncated_texts.append(trunc)
+        
+        # Process for hover tooltip - escape special characters
+        hover_text = text.replace("\n", " ").replace("\r", "")
+        hover_text = hover_text[:200] + "..." if len(hover_text) > 200 else hover_text
+        hover_texts.append(hover_text)
+    
     # Create embeddings and reduce to 2D
     try:
         embeddings = create_embeddings(texts)
@@ -139,27 +152,28 @@ def get_message_embeddings_json(
         'x': points_2d[:, 0].tolist(),  # Convert numpy values to Python native types
         'y': points_2d[:, 1].tolist(),
         'message_id': message_ids,
-        'message': texts,
+        'message': truncated_texts,  # For table display
+        'hover_text': hover_texts,   # For hover tooltips
         'date': created_dates,
         'is_injection': is_prompt_injection,
         'color': ['#FF4136' if inj else '#0074D9' for inj in is_prompt_injection],
         'size': [10 if inj else 8 for inj in is_prompt_injection],
     })
     
-    # Create plot
+    # Create plot with selection tools
     p = figure(
         title="Message Embeddings Visualization",
-        tools="pan,wheel_zoom,box_zoom,reset,save",
+        tools="pan,wheel_zoom,box_zoom,reset,save,lasso_select,box_select",
         width=800, 
         height=500,
         active_scroll="wheel_zoom",
     )
     
-    # Add hover tool
+    # Add hover tool with detailed tooltips
     hover = HoverTool(
         tooltips=[
             ("ID", "@message_id"),
-            ("Message", "@message{safe}"),
+            ("Message", "@hover_text{safe}"),
             ("Date", "@date"),
             ("Prompt Injection", "@is_injection"),
         ],
@@ -169,7 +183,8 @@ def get_message_embeddings_json(
     
     # Create circle renderers
     p.circle('x', 'y', source=source, size='size', fill_color='color',
-             line_color='color', alpha=0.7)
+             line_color='color', alpha=0.7, selection_color="firebrick",
+             nonselection_alpha=0.3, selection_alpha=0.9)
     
     # Configure legend with two color swatches
     from bokeh.models import Legend, LegendItem
@@ -179,8 +194,32 @@ def get_message_embeddings_json(
     ])
     p.add_layout(legend, 'right')
     
-    # Convert the plot to a JSON item
-    item_json = json_item(p, "embedding-plot")
+    # Create data table
+    from bokeh.models import DataTable, TableColumn, StringFormatter
+    
+    columns = [
+        TableColumn(field="message_id", title="ID", width=60),
+        TableColumn(field="message", title="Message", width=400),
+        TableColumn(field="date", title="Date", width=150),
+        TableColumn(field="is_injection", title="Injection", width=80),
+    ]
+    
+    data_table = DataTable(
+        source=source,
+        columns=columns,
+        width=800,
+        height=250,
+        index_position=None,
+        selectable=True,
+        sortable=True,
+    )
+    
+    # Create layout with both plot and table
+    from bokeh.layouts import column
+    layout = column(p, data_table)
+    
+    # Convert the combined layout to a JSON item
+    item_json = json_item(layout, "embedding-plot")
     
     return item_json
 

@@ -28,6 +28,23 @@
       .auth-btn {
         @apply w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
       }
+      
+      /* Bokeh visualization styling */
+      #embedding-plot {
+        width: 100%;
+        overflow-x: auto;
+      }
+      /* Style Bokeh tables to fit the app theme */
+      .bk-data-table {
+        font-family: inherit !important;
+      }
+      .slick-header-column {
+        background-color: #f3f4f6 !important;
+        font-weight: 600 !important;
+      }
+      .bokeh-selected {
+        background-color: #fecaca !important;
+      }
     </style>
   </head>
   <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -258,23 +275,10 @@
             </div>
             
             <!-- Bokeh container -->
-            <div id="bokeh-container" class="hidden">
-              <!-- Plot will be rendered here -->
-              <div id="embedding-plot"></div>
+            <div id="bokeh-container" class="hidden overflow-x-auto">
+              <!-- Plot and table will be rendered here -->
+              <div id="embedding-plot" class="mt-2"></div>
             </div>
-          </div>
-          
-          <!-- Explanation Section -->
-          <div class="bg-white p-6 rounded-lg shadow-md">
-            <h3 class="text-lg font-medium mb-3">Understanding Message Embeddings</h3>
-            <p class="text-gray-700 mb-2">This visualization transforms messages into vector representations (embeddings) using a neural network model. Similar messages will appear close together in the 2D space.</p>
-            <p class="text-gray-700 mb-2">Features:</p>
-            <ul class="list-disc pl-5 mb-3 text-gray-700">
-              <li>Interactive visualization that clusters similar messages</li>
-              <li>Color-coded points to highlight potential prompt injection attempts</li>
-              <li>Hover over points to see message details</li>
-              <li>Potential prompt injections often form clusters separate from regular messages</li>
-            </ul>
           </div>
         </div>
 
