@@ -10,7 +10,7 @@ from .db.init_db import init_db
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Echker API")
+app = FastAPI(title="Mlechker API")
 
 # Configure CORS
 app.add_middleware(
