@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import Dashboard from './components/Dashboard';
+import Dashboard from './components/Dashboard/Dashboard';
 
 // Store root instances to avoid recreating them
 const rootInstances: Record<string, ReactDOM.Root> = {};
