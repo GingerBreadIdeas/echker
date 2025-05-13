@@ -1,6 +1,80 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
+// Mock data type definitions
+interface WeeklyData {
+  day: string;
+  normal: number;
+  injection: number;
+}
+
+interface DashboardData {
+  totalMessages: number;
+  normalMessages: number;
+  injectionMessages: number;
+  weeklyData: WeeklyData[];
+}
 
 const Dashboard: React.FC = () => {
+  // State for dashboard data
+  const [data, setData] = useState<DashboardData>({
+    totalMessages: 1247,
+    normalMessages: 1189,
+    injectionMessages: 58,
+    weeklyData: [
+      { day: 'Mon', normal: 48, injection: 4 },
+      { day: 'Tue', normal: 36, injection: 6 },
+      { day: 'Wed', normal: 60, injection: 8 },
+      { day: 'Thu', normal: 40, injection: 2 },
+      { day: 'Fri', normal: 52, injection: 5 },
+      { day: 'Sat', normal: 24, injection: 1 },
+      { day: 'Sun', normal: 20, injection: 1 }
+    ]
+  });
+
+  // Calculate percentages
+  const totalPercent = (data.normalMessages / data.totalMessages) * 100;
+  const injectionPercent = (data.injectionMessages / data.totalMessages) * 100;
+
+  // Initialize dashboard data when component mounts
+  useEffect(() => {
+    // In the future, this could fetch real data from an API
+    // For now, we're using the mock data initialized in the state
+    
+    // You could add an API call here, for example:
+    // async function fetchDashboardData() {
+    //   try {
+    //     const response = await fetch('/api/v1/dashboard/stats');
+    //     const apiData = await response.json();
+    //     setData(apiData);
+    //   } catch (error) {
+    //     console.error('Error fetching dashboard data:', error);
+    //   }
+    // }
+    // fetchDashboardData();
+    
+    // Check server status
+    fetch('http://localhost:8000/api/health')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(statusData => {
+        const serverStatusElement = document.getElementById('serverStatus');
+        if (serverStatusElement) {
+          serverStatusElement.textContent = `Server Status: ${statusData.status || 'Online'}`;
+        }
+      })
+      .catch(error => {
+        console.error('Error checking server status:', error);
+        const serverStatusElement = document.getElementById('serverStatus');
+        if (serverStatusElement) {
+          serverStatusElement.textContent = `Server Status: Error - ${error.message}`;
+        }
+      });
+  }, []);
+
   return (
     <div id="dashboard-page" className="page active">
       <h2 className="text-2xl font-semibold mb-4">Dashboard</h2>
@@ -11,7 +85,9 @@ const Dashboard: React.FC = () => {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-medium text-gray-700 mb-4">Total Messages</h3>
           <div className="flex items-center justify-center flex-col">
-            <div className="text-8xl font-bold text-blue-600 leading-none mb-4" id="total-messages-count">1,247</div>
+            <div className="text-8xl font-bold text-blue-600 leading-none mb-4" id="total-messages-count">
+              {data.totalMessages.toLocaleString()}
+            </div>
             <div className="flex items-center text-green-500 font-medium">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
@@ -25,17 +101,37 @@ const Dashboard: React.FC = () => {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-medium text-gray-700 mb-2">Message Types</h3>
           <div className="w-full h-64 flex justify-center items-center" id="pie-chart-container">
-            {/* SVG Pie Chart (mock) - corrected segment positions */}
+            {/* SVG Pie Chart */}
             <svg width="200" height="200" viewBox="0 0 42 42" className="donut">
               <circle className="donut-hole" cx="21" cy="21" r="15.91549430918954" fill="#fff"></circle>
               <circle className="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#d2d3d4" strokeWidth="3"></circle>
-              {/* Normal messages segment (95.3%) - starts at top (0 degrees) */}
-              <circle className="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#0074D9" strokeWidth="3" strokeDasharray="95.3 4.7" strokeDashoffset="0"></circle>
-              {/* Injection segment (4.7%) - continues where normal segment ends */}
-              <circle className="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#FF4136" strokeWidth="3" strokeDasharray="4.7 95.3" strokeDashoffset="-95.3"></circle>
+              {/* Normal messages segment */}
+              <circle 
+                className="donut-segment" 
+                cx="21" 
+                cy="21" 
+                r="15.91549430918954" 
+                fill="transparent" 
+                stroke="#0074D9" 
+                strokeWidth="3" 
+                strokeDasharray={`${totalPercent} ${100-totalPercent}`} 
+                strokeDashoffset="0"
+              ></circle>
+              {/* Injection segment */}
+              <circle 
+                className="donut-segment" 
+                cx="21" 
+                cy="21" 
+                r="15.91549430918954" 
+                fill="transparent" 
+                stroke="#FF4136" 
+                strokeWidth="3" 
+                strokeDasharray={`${injectionPercent} ${100-injectionPercent}`} 
+                strokeDashoffset={`-${totalPercent}`}
+              ></circle>
               <g className="chart-text">
                 <text x="50%" y="50%" className="chart-number" textAnchor="middle" alignmentBaseline="middle">
-                  95.3%
+                  {totalPercent.toFixed(1)}%
                 </text>
                 <text x="50%" y="50%" className="chart-label" textAnchor="middle" alignmentBaseline="middle" dy="1.2em">
                   normal
@@ -46,11 +142,11 @@ const Dashboard: React.FC = () => {
           <div className="flex justify-center mt-4">
             <div className="flex items-center mr-6">
               <div className="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
-              <span className="text-sm">Normal (95.3%)</span>
+              <span className="text-sm">Normal ({totalPercent.toFixed(1)}%)</span>
             </div>
             <div className="flex items-center">
               <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
-              <span className="text-sm">Injections (4.7%)</span>
+              <span className="text-sm">Injections ({injectionPercent.toFixed(1)}%)</span>
             </div>
           </div>
         </div>
@@ -85,54 +181,23 @@ const Dashboard: React.FC = () => {
               
               {/* Bars container */}
               <div className="flex justify-between h-full items-end">
-                {/* Monday */}
-                <div className="flex flex-col items-center mx-2" style={{ width: "40px" }}>
-                  <div className="w-full bg-blue-500 rounded-t" style={{ height: "240px" }} data-value="48"></div>
-                  <div className="w-full bg-red-500 rounded-b mt-0.5" style={{ height: "20px" }} data-value="4"></div>
-                  <p className="text-xs mt-2 font-medium">Mon</p>
-                </div>
-                
-                {/* Tuesday */}
-                <div className="flex flex-col items-center mx-2" style={{ width: "40px" }}>
-                  <div className="w-full bg-blue-500 rounded-t" style={{ height: "180px" }} data-value="36"></div>
-                  <div className="w-full bg-red-500 rounded-b mt-0.5" style={{ height: "30px" }} data-value="6"></div>
-                  <p className="text-xs mt-2 font-medium">Tue</p>
-                </div>
-                
-                {/* Wednesday */}
-                <div className="flex flex-col items-center mx-2" style={{ width: "40px" }}>
-                  <div className="w-full bg-blue-500 rounded-t" style={{ height: "300px" }} data-value="60"></div>
-                  <div className="w-full bg-red-500 rounded-b mt-0.5" style={{ height: "40px" }} data-value="8"></div>
-                  <p className="text-xs mt-2 font-medium">Wed</p>
-                </div>
-                
-                {/* Thursday */}
-                <div className="flex flex-col items-center mx-2" style={{ width: "40px" }}>
-                  <div className="w-full bg-blue-500 rounded-t" style={{ height: "200px" }} data-value="40"></div>
-                  <div className="w-full bg-red-500 rounded-b mt-0.5" style={{ height: "10px" }} data-value="2"></div>
-                  <p className="text-xs mt-2 font-medium">Thu</p>
-                </div>
-                
-                {/* Friday */}
-                <div className="flex flex-col items-center mx-2" style={{ width: "40px" }}>
-                  <div className="w-full bg-blue-500 rounded-t" style={{ height: "260px" }} data-value="52"></div>
-                  <div className="w-full bg-red-500 rounded-b mt-0.5" style={{ height: "25px" }} data-value="5"></div>
-                  <p className="text-xs mt-2 font-medium">Fri</p>
-                </div>
-                
-                {/* Saturday */}
-                <div className="flex flex-col items-center mx-2" style={{ width: "40px" }}>
-                  <div className="w-full bg-blue-500 rounded-t" style={{ height: "120px" }} data-value="24"></div>
-                  <div className="w-full bg-red-500 rounded-b mt-0.5" style={{ height: "5px" }} data-value="1"></div>
-                  <p className="text-xs mt-2 font-medium">Sat</p>
-                </div>
-                
-                {/* Sunday */}
-                <div className="flex flex-col items-center mx-2" style={{ width: "40px" }}>
-                  <div className="w-full bg-blue-500 rounded-t" style={{ height: "100px" }} data-value="20"></div>
-                  <div className="w-full bg-red-500 rounded-b mt-0.5" style={{ height: "5px" }} data-value="1"></div>
-                  <p className="text-xs mt-2 font-medium">Sun</p>
-                </div>
+                {data.weeklyData.map((dayData, index) => (
+                  <div className="flex flex-col items-center mx-2" style={{ width: "40px" }} key={index}>
+                    <div 
+                      className="w-full bg-blue-500 rounded-t bar-chart" 
+                      style={{ height: `${dayData.normal * 5}px` }} 
+                      data-value={dayData.normal}
+                      title={`${dayData.normal} normal messages`}
+                    ></div>
+                    <div 
+                      className="w-full bg-red-500 rounded-b mt-0.5 bar-chart" 
+                      style={{ height: `${dayData.injection * 5}px` }} 
+                      data-value={dayData.injection}
+                      title={`${dayData.injection} potential injections`}
+                    ></div>
+                    <p className="text-xs mt-2 font-medium">{dayData.day}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

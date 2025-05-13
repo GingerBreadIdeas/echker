@@ -1243,51 +1243,7 @@ else:
         // Listen for window resize events
         window.addEventListener('resize', handleResponsiveLayout);
         
-        // Initialize dashboard with mock data
-        function initDashboard() {
-          // Mock data
-          const mockData = {
-            totalMessages: 1247,
-            normalMessages: 1189,
-            injectionMessages: 58,
-            weeklyData: [
-              { day: 'Mon', normal: 48, injection: 4 },
-              { day: 'Tue', normal: 36, injection: 6 },
-              { day: 'Wed', normal: 60, injection: 8 },
-              { day: 'Thu', normal: 40, injection: 2 },
-              { day: 'Fri', normal: 52, injection: 5 },
-              { day: 'Sat', normal: 24, injection: 1 },
-              { day: 'Sun', normal: 20, injection: 1 }
-            ]
-          };
-          
-          // Calculate percentages
-          const totalPercent = mockData.normalMessages / mockData.totalMessages * 100;
-          const injectionPercent = mockData.injectionMessages / mockData.totalMessages * 100;
-          
-          // Update total messages count
-          document.getElementById('total-messages-count').textContent = mockData.totalMessages.toLocaleString();
-          
-          // Update donut chart
-          const donutSegments = document.querySelectorAll('.donut-segment');
-          donutSegments[0].setAttribute('stroke-dasharray', `${totalPercent} ${100-totalPercent}`);
-          donutSegments[1].setAttribute('stroke-dasharray', `${injectionPercent} ${100-injectionPercent}`);
-          
-          // Update chart text
-          const chartNumber = document.querySelector('.chart-number');
-          chartNumber.textContent = `${totalPercent.toFixed(1)}%`;
-          
-          // Update legend text
-          const legendTexts = document.querySelectorAll('#pie-chart-container + div span');
-          legendTexts[0].textContent = `Normal (${totalPercent.toFixed(1)}%)`;
-          legendTexts[1].textContent = `Injections (${injectionPercent.toFixed(1)}%)`;
-          
-          // Bar chart could be updated similarly if needed
-          // Already set static values in the HTML
-        }
-        
-        // Initialize dashboard on page load
-        initDashboard();
+        // Dashboard data is now managed by the React component
         
         // Add hover effects to bar chart bars with tooltips
         const barCharts = document.querySelectorAll('.bar-chart');
@@ -1350,21 +1306,21 @@ else:
     <script type="module" src="/src/dashboard.tsx"></script>
     
     <script>
-      // Initialize the dashboard component when the dashboard page is shown
+      // Initialize the dashboard component when the page loads and when navigating to dashboard
       document.addEventListener('DOMContentLoaded', function() {
-        // If window.initDashboard exists (our React component is loaded)
-        // and the dashboard page is active, initialize the dashboard
-        if (window.initDashboard && document.getElementById('dashboard-page').classList.contains('active')) {
+        // Initialize when page first loads if dashboard is active
+        if (typeof window.initDashboard === 'function' && 
+            document.getElementById('dashboard-page').classList.contains('active')) {
           window.initDashboard('dashboard-root');
         }
         
-        // Also initialize dashboard when navigating to the dashboard page
+        // Initialize when clicking any dashboard navigation link
         const dashboardNavLinks = document.querySelectorAll('[data-page="dashboard"]');
         dashboardNavLinks.forEach(link => {
           link.addEventListener('click', function() {
-            // Small timeout to allow the page to become visible
+            // Small timeout to allow the page to become visible first
             setTimeout(() => {
-              if (window.initDashboard) {
+              if (typeof window.initDashboard === 'function') {
                 window.initDashboard('dashboard-root');
               }
             }, 50);
