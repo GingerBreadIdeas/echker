@@ -574,43 +574,6 @@
         
         // Dashboard data is now managed by the React component
         
-        // Add hover effects to bar chart bars with tooltips
-        const barCharts = document.querySelectorAll('.bar-chart');
-        barCharts.forEach(bar => {
-          bar.addEventListener('mouseover', function() {
-            // Get actual value from data attribute
-            const value = this.getAttribute('data-value');
-            const isRed = this.classList.contains('bg-red-500');
-            const type = isRed ? 'potential injections' : 'normal messages';
-            
-            // Create tooltip div if it doesn't exist
-            let tooltip = document.getElementById('bar-tooltip');
-            if (!tooltip) {
-              tooltip = document.createElement('div');
-              tooltip.id = 'bar-tooltip';
-              tooltip.className = 'absolute bg-gray-800 text-white py-1 px-2 rounded text-xs z-50 pointer-events-none';
-              document.body.appendChild(tooltip);
-            }
-            
-            // Set tooltip content and position
-            tooltip.textContent = `${value} ${type}`;
-            tooltip.style.display = 'block';
-            
-            // Position tooltip near the bar
-            const rect = this.getBoundingClientRect();
-            tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2}px`;
-            tooltip.style.top = `${rect.top - tooltip.offsetHeight - 5}px`;
-          });
-          
-          bar.addEventListener('mouseout', function() {
-            // Hide tooltip on mouseout
-            const tooltip = document.getElementById('bar-tooltip');
-            if (tooltip) {
-              tooltip.style.display = 'none';
-            }
-          });
-        });
-        
         // Check server status
         fetch(`${apiBaseUrl}/api/health`)
           .then(response => {
