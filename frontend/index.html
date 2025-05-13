@@ -193,45 +193,8 @@
         </div>
 
         <div id="anomaly-page" class="page hidden">
-          <h2 class="text-2xl font-semibold mb-4">Anomaly Detection</h2>
-          
-          <!-- Visualization Container -->
-          <div class="bg-white p-6 rounded-lg shadow-md mb-6 w-full">
-            <div class="flex justify-between items-center mb-4 w-full">
-              <h3 class="text-lg font-medium">Message Embeddings Visualization</h3>
-              <button id="refresh-embeddings" class="bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200">
-                <i class="fas fa-sync-alt mr-1"></i> Refresh
-              </button>
-            </div>
-            
-            <p class="text-gray-700 mb-4">This visualization shows text embeddings in 2D space using t-SNE dimensionality reduction. Regular messages are shown in blue, and potential prompt injections in red.</p>
-            
-            <!-- Loading indicator -->
-            <div id="embeddings-loading" class="py-20 flex justify-center">
-              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-            
-            <!-- Empty state -->
-            <div id="embeddings-empty" class="hidden py-20 text-center">
-              <p class="text-gray-500">No messages found</p>
-              <p class="text-gray-400 text-sm mt-2">Create some messages via the API first</p>
-            </div>
-            
-            <!-- Error state -->
-            <div id="embeddings-error" class="hidden py-20 text-center">
-              <p class="text-red-500">Error loading visualization</p>
-              <p id="embeddings-error-message" class="text-gray-500 text-sm mt-2"></p>
-              <button id="embeddings-try-again" class="mt-4 bg-red-100 text-red-700 px-4 py-2 rounded hover:bg-red-200">
-                Try Again
-              </button>
-            </div>
-            
-            <!-- Bokeh container -->
-            <div id="bokeh-container" class="hidden w-full">
-              <!-- Plot and table will be rendered here -->
-              <div id="embedding-plot" class="mt-2 w-full"></div>
-            </div>
-          </div>
+          <!-- Placeholder div for React anomaly component -->
+          <div id="anomaly-react-root"></div>
         </div>
 
         <div id="settings-page" class="page hidden">
@@ -365,6 +328,7 @@ else:
     <!-- Initialize React Components -->
     <script type="module" src="/src/dashboard.tsx"></script>
     <script type="module" src="/src/tracking.tsx"></script>
+    <script type="module" src="/src/anomaly.tsx"></script>
     
     <!-- JavaScript for navigation and authentication -->
     <script>
@@ -930,6 +894,12 @@ else:
           window.initTracking('tracking-react-root');
         }
         
+        // Initialize anomaly if it's active on page load
+        if (typeof window.initAnomaly === 'function' && 
+            document.getElementById('anomaly-page').classList.contains('active')) {
+          window.initAnomaly('anomaly-react-root');
+        }
+        
         // Initialize when clicking any dashboard navigation link
         const dashboardNavLinks = document.querySelectorAll('[data-page="dashboard"]');
         dashboardNavLinks.forEach(link => {
@@ -951,6 +921,19 @@ else:
             setTimeout(() => {
               if (typeof window.initTracking === 'function') {
                 window.initTracking('tracking-react-root');
+              }
+            }, 50);
+          });
+        });
+        
+        // Initialize when clicking any anomaly navigation link
+        const anomalyNavLinks = document.querySelectorAll('[data-page="anomaly"]');
+        anomalyNavLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            // Small timeout to allow the page to become visible first
+            setTimeout(() => {
+              if (typeof window.initAnomaly === 'function') {
+                window.initAnomaly('anomaly-react-root');
               }
             }, 50);
           });

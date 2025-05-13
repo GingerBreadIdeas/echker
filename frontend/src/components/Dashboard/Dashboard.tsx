@@ -76,7 +76,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   return (
-    <div id="dashboard-page" className="page active">
+    <div>
       <h2 className="text-2xl font-semibold mb-4">Dashboard</h2>
       
       {/* Top row with stats and pie chart */}
