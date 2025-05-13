@@ -187,109 +187,9 @@
         </div>
 
         <div id="tracking-page" class="page hidden">
-          <h2 class="text-2xl font-semibold mb-4">Message Tracking</h2>
-          
-          <!-- Messages List -->
-          <div class="bg-white p-6 rounded-lg shadow-md mb-4">
-            <div class="flex justify-between items-center mb-6">
-              <h3 class="text-lg font-medium">Your Chat Messages</h3>
-              <div class="flex space-x-2">
-                <select id="messages-per-page" class="border rounded px-2 py-1 text-sm">
-                  <option value="5">5 per page</option>
-                  <option value="10" selected>10 per page</option>
-                  <option value="25">25 per page</option>
-                  <option value="50">50 per page</option>
-                </select>
-                <button id="refresh-messages" class="bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200">
-                  <i class="fas fa-sync-alt"></i>
-                </button>
-              </div>
-            </div>
-            
-            <!-- Loading indicator -->
-            <div id="messages-loading" class="py-20 flex justify-center">
-              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-            
-            <!-- Empty state -->
-            <div id="messages-empty" class="hidden py-20 text-center">
-              <p class="text-gray-500">No messages found</p>
-              <p class="text-gray-400 text-sm mt-2">Messages sent via the API will appear here</p>
-            </div>
-            
-            <!-- Messages list -->
-            <div id="messages-list" class="hidden space-y-4"></div>
-            
-            <!-- Message template (hidden, used for cloning) -->
-            <template id="message-template">
-              <div class="message-item border rounded-lg overflow-hidden">
-                <div class="message-header bg-gray-50 px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-100">
-                  <div class="flex items-center space-x-2">
-                    <i class="message-icon fas fa-comment-alt text-blue-500"></i>
-                    <p class="message-preview font-medium"></p>
-                  </div>
-                  <div class="flex items-center space-x-4">
-                    <span class="message-date text-sm text-gray-500"></span>
-                    <button class="message-delete text-red-500 hover:text-red-700">
-                      <i class="fas fa-trash-alt"></i>
-                    </button>
-                    <i class="fas fa-chevron-down text-gray-400"></i>
-                  </div>
-                </div>
-                <div class="message-details hidden p-4 border-t">
-                  <div class="mb-4">
-                    <h4 class="text-sm font-medium text-gray-500 mb-1">Message</h4>
-                    <div class="message-content bg-gray-50 p-3 rounded"></div>
-                  </div>
-                  <div class="message-response-container">
-                    <h4 class="text-sm font-medium text-gray-500 mb-1">Response</h4>
-                    <div class="message-response bg-gray-50 p-3 rounded"></div>
-                  </div>
-                  <div class="mt-4 flex justify-between items-center">
-                    <div class="flex items-center">
-                      <label class="inline-flex items-center">
-                        <input type="checkbox" class="prompt-injection-checkbox form-checkbox h-5 w-5 text-red-600">
-                        <span class="ml-2 text-red-700 font-medium">Prompt Injection</span>
-                      </label>
-                    </div>
-                    <div class="text-xs text-gray-500">
-                      Message ID: <span class="message-id"></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </template>
-            
-            <!-- Pagination -->
-            <div id="messages-pagination" class="hidden mt-6 flex justify-between items-center">
-              <button id="prev-page" class="bg-gray-100 text-gray-700 px-4 py-2 rounded disabled:opacity-50">
-                <i class="fas fa-chevron-left mr-1"></i> Previous
-              </button>
-              <div class="text-sm text-gray-500">
-                Page <span id="current-page">1</span> of <span id="total-pages">1</span>
-              </div>
-              <button id="next-page" class="bg-gray-100 text-gray-700 px-4 py-2 rounded disabled:opacity-50">
-                Next <i class="fas fa-chevron-right ml-1"></i>
-              </button>
-            </div>
-          </div>
-          
-          <!-- Visualization and API Hint Section -->
-          <div class="space-y-4">
-            
-            <!-- API Hint -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-800">
-              <div class="flex">
-                <div class="flex-shrink-0 mr-3">
-                  <i class="fas fa-info-circle text-blue-500 text-xl"></i>
-                </div>
-                <div>
-                  <h4 class="font-medium mb-1">Using the Messages API</h4>
-                  <p class="text-sm">Messages are created via the API using your API token. Visit the Settings page to generate a token and see examples.</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <!-- Placeholder div for React tracking component -->
+          <div id="tracking-react-root"></div>
+          <p id="trackingStatus" class="text-gray-500 mt-6 text-sm"></p>
         </div>
 
         <div id="anomaly-page" class="page hidden">
@@ -462,8 +362,9 @@ else:
       </main>
     </div>
 
-    <!-- Initialize Dashboard React Component -->
+    <!-- Initialize React Components -->
     <script type="module" src="/src/dashboard.tsx"></script>
+    <script type="module" src="/src/tracking.tsx"></script>
     
     <!-- JavaScript for navigation and authentication -->
     <script>
@@ -664,292 +565,7 @@ else:
           navigateToPage('dashboard');
         }
         
-        // Message tracking functionality
-        const messagesPerPage = document.getElementById('messages-per-page');
-        const refreshMessagesBtn = document.getElementById('refresh-messages');
-        const messagesLoading = document.getElementById('messages-loading');
-        const messagesEmpty = document.getElementById('messages-empty');
-        const messagesList = document.getElementById('messages-list');
-        const messageTemplate = document.getElementById('message-template');
-        const messagesPagination = document.getElementById('messages-pagination');
-        const prevPageBtn = document.getElementById('prev-page');
-        const nextPageBtn = document.getElementById('next-page');
-        const currentPageSpan = document.getElementById('current-page');
-        const totalPagesSpan = document.getElementById('total-pages');
-        
-        // Messages state
-        let currentPage = 1;
-        let totalPages = 1;
-        let pageSize = 10;
-        
-        // Format date helper
-        function formatDate(dateString) {
-          const date = new Date(dateString);
-          return date.toLocaleString();
-        }
-        
-        // Truncate text helper
-        function truncateText(text, maxLength = 40) {
-          if (text.length <= maxLength) return text;
-          return text.substring(0, maxLength) + '...';
-        }
-        
-        // Fetch messages function
-        function fetchMessages() {
-          console.log("fetchMessages function called");
-          const token = localStorage.getItem('token');
-          if (!token) {
-            console.log("No token found, showing empty state");
-            messagesLoading.classList.add('hidden');
-            messagesEmpty.classList.remove('hidden');
-            messagesList.classList.add('hidden');
-            messagesPagination.classList.add('hidden');
-            return;
-          }
-          
-          // Show loading state
-          messagesLoading.classList.remove('hidden');
-          messagesEmpty.classList.add('hidden');
-          messagesList.classList.add('hidden');
-          messagesPagination.classList.add('hidden');
-          
-          // Calculate pagination parameters
-          const skip = (currentPage - 1) * pageSize;
-          
-          const url = `${apiBaseUrl}/api/v1/chat/messages?skip=${skip}&limit=${pageSize}`;
-          console.log("Fetching messages from:", url);
-          
-          fetch(url, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          })
-          .then(response => {
-            console.log("Fetch response status:", response.status);
-            if (response.ok) {
-              return response.json();
-            } else {
-              throw new Error(`Failed to fetch messages: ${response.status}`);
-            }
-          })
-          .catch(error => {
-            console.error("Fetch error:", error);
-            throw error;
-          })
-          .then(data => {
-            console.log("Received messages data:", data);
-            // Hide loading state
-            messagesLoading.classList.add('hidden');
-            
-            // Get messages from response
-            const messages = data.messages || [];
-            console.log("Messages array length:", messages.length);
-            
-            if (messages.length === 0) {
-              console.log("No messages found, showing empty state");
-              messagesEmpty.classList.remove('hidden');
-              messagesList.classList.add('hidden');
-              messagesPagination.classList.add('hidden');
-              return;
-            }
-            
-            // Clear existing messages
-            messagesList.innerHTML = '';
-            
-            // Add each message to the list
-            console.log("Processing messages to display");
-            messages.forEach(message => {
-              console.log("Processing message:", message.id, message.content);
-              const messageElement = document.importNode(messageTemplate.content, true);
-              
-              // Set message data
-              messageElement.querySelector('.message-preview').textContent = truncateText(message.content);
-              messageElement.querySelector('.message-date').textContent = formatDate(message.created_at);
-              messageElement.querySelector('.message-content').textContent = message.content;
-              
-              const responseContainer = messageElement.querySelector('.message-response-container');
-              const responseElement = messageElement.querySelector('.message-response');
-              
-              if (message.response) {
-                responseElement.textContent = message.response;
-              } else {
-                responseContainer.classList.add('hidden');
-              }
-              
-              messageElement.querySelector('.message-id').textContent = message.id;
-              
-              // Set prompt injection checkbox
-              const injectionCheckbox = messageElement.querySelector('.prompt-injection-checkbox');
-              injectionCheckbox.checked = message.is_prompt_injection;
-              
-              // Style message header based on injection status
-              const messageHeader = messageElement.querySelector('.message-header');
-              const messageIcon = messageElement.querySelector('.message-icon');
-              messageHeader.setAttribute('data-message-id', message.id);
-              
-              if (message.is_prompt_injection) {
-                messageHeader.classList.add('bg-red-50');
-                messageHeader.classList.remove('bg-gray-50');
-                messageIcon.classList.remove('fa-comment-alt', 'text-blue-500');
-                messageIcon.classList.add('fa-exclamation-triangle', 'text-red-500');
-              }
-              
-              // Add toggle functionality
-              const header = messageElement.querySelector('.message-header');
-              const details = messageElement.querySelector('.message-details');
-              const chevron = header.querySelector('.fa-chevron-down');
-              
-              header.addEventListener('click', function(e) {
-                // Don't toggle if clicking the delete button
-                if (e.target.closest('.message-delete')) return;
-                
-                details.classList.toggle('hidden');
-                chevron.classList.toggle('fa-chevron-down');
-                chevron.classList.toggle('fa-chevron-up');
-              });
-              
-              // Add delete functionality
-              const deleteBtn = messageElement.querySelector('.message-delete');
-              deleteBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (confirm('Are you sure you want to delete this message?')) {
-                  deleteMessage(message.id);
-                }
-              });
-              
-              // Add prompt injection toggle functionality
-              // We already have the injectionCheckbox variable from above
-              injectionCheckbox.addEventListener('change', function(e) {
-                e.stopPropagation();
-                updateMessageInjectionStatus(message.id, this.checked);
-              });
-              
-              // Add to the list
-              messagesList.appendChild(messageElement);
-            });
-            
-            // Show the list
-            messagesList.classList.remove('hidden');
-            
-            // Update pagination if we have data about total count
-            // For now we'll just disable next button if we don't have a full page
-            const hasMorePages = messages.length === pageSize;
-            
-            if (currentPage > 1 || hasMorePages) {
-              messagesPagination.classList.remove('hidden');
-              currentPageSpan.textContent = currentPage;
-              totalPagesSpan.textContent = hasMorePages ? '?' : currentPage;
-              
-              prevPageBtn.disabled = currentPage === 1;
-              nextPageBtn.disabled = !hasMorePages;
-            }
-          })
-          .catch(error => {
-            console.error('Error fetching messages:', error);
-            messagesLoading.classList.add('hidden');
-            messagesEmpty.classList.remove('hidden');
-          });
-        }
-        
-        // Delete message function
-        function deleteMessage(messageId) {
-          const token = localStorage.getItem('token');
-          if (!token) return;
-          
-          fetch(`${apiBaseUrl}/api/v1/chat/messages/${messageId}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          })
-          .then(response => {
-            if (response.ok) {
-              // Refresh messages after deletion
-              fetchMessages();
-            } else {
-              throw new Error('Failed to delete message');
-            }
-          })
-          .catch(error => {
-            console.error('Error deleting message:', error);
-            alert('Error deleting message. Please try again.');
-          });
-        }
-        
-        // Update message's prompt injection status
-        function updateMessageInjectionStatus(messageId, isPromptInjection) {
-          const token = localStorage.getItem('token');
-          if (!token) return;
-          
-          fetch(`${apiBaseUrl}/api/v1/chat/messages/${messageId}`, {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              is_prompt_injection: isPromptInjection
-            })
-          })
-          .then(response => {
-            if (response.ok) {
-              // Update the UI to reflect the change without refreshing all messages
-              const messageHeader = document.querySelector(`[data-message-id="${messageId}"]`);
-              if (messageHeader) {
-                const messageIcon = messageHeader.querySelector('.message-icon');
-                
-                if (isPromptInjection) {
-                  messageHeader.classList.add('bg-red-50');
-                  messageHeader.classList.remove('bg-gray-50');
-                  messageIcon.classList.remove('fa-comment-alt', 'text-blue-500');
-                  messageIcon.classList.add('fa-exclamation-triangle', 'text-red-500');
-                } else {
-                  messageHeader.classList.remove('bg-red-50');
-                  messageHeader.classList.add('bg-gray-50');
-                  messageIcon.classList.remove('fa-exclamation-triangle', 'text-red-500');
-                  messageIcon.classList.add('fa-comment-alt', 'text-blue-500');
-                }
-              }
-            } else {
-              throw new Error('Failed to update message');
-            }
-          })
-          .catch(error => {
-            console.error('Error updating message:', error);
-            alert('Error updating message. Please try again.');
-            // Reset the checkbox to its previous state
-            fetchMessages();
-          });
-        }
-        
-        // Set up message tracking event listeners
-        if (refreshMessagesBtn) {
-          refreshMessagesBtn.addEventListener('click', fetchMessages);
-        }
-        
-        if (messagesPerPage) {
-          messagesPerPage.addEventListener('change', function() {
-            pageSize = parseInt(this.value);
-            currentPage = 1;
-            fetchMessages();
-          });
-        }
-        
-        if (prevPageBtn) {
-          prevPageBtn.addEventListener('click', function() {
-            if (currentPage > 1) {
-              currentPage--;
-              fetchMessages();
-            }
-          });
-        }
-        
-        if (nextPageBtn) {
-          nextPageBtn.addEventListener('click', function() {
-            currentPage++;
-            fetchMessages();
-          });
-        }
+        // Message tracking functionality is now handled by the React component
         
         // API Token generation functionality
         const generateTokenBtn = document.getElementById('generate-token-btn');
@@ -1020,10 +636,7 @@ else:
             navigateToPage(pageId);
             
             // Load data for different pages
-            if (pageId === 'tracking') {
-              console.log("Tracking page selected, calling fetchMessages()");
-              fetchMessages();
-            } else if (pageId === 'anomaly') {
+            if (pageId === 'anomaly') {
               console.log("Anomaly page selected, loading embedding visualization");
               loadEmbeddingVisualization();
             }
@@ -1044,11 +657,8 @@ else:
           if (hash && document.querySelector(`#${hash}-page`)) {
             navigateToPage(hash);
             
-            // Load messages when navigating to tracking page
-            if (hash === 'tracking') {
-              console.log("URL hash is 'tracking', calling fetchMessages()");
-              fetchMessages();
-            } else if (hash === 'anomaly') {
+            // Load data for different pages
+            if (hash === 'anomaly') {
               console.log("URL hash is 'anomaly', loading embedding visualization");
               loadEmbeddingVisualization();
             }
@@ -1302,16 +912,22 @@ else:
       });
     </script>
     
-    <!-- Initialize Dashboard React Component -->
+    <!-- Initialize React Components -->
     <script type="module" src="/src/dashboard.tsx"></script>
     
     <script>
-      // Initialize the dashboard component when the page loads and when navigating to dashboard
+      // Initialize React components when the page loads and when navigating to their respective pages
       document.addEventListener('DOMContentLoaded', function() {
-        // Initialize when page first loads if dashboard is active
+        // Initialize dashboard if it's active on page load
         if (typeof window.initDashboard === 'function' && 
             document.getElementById('dashboard-page').classList.contains('active')) {
-          window.initDashboard('dashboard-root');
+          window.initDashboard('dashboard-react-root');
+        }
+        
+        // Initialize tracking if it's active on page load
+        if (typeof window.initTracking === 'function' && 
+            document.getElementById('tracking-page').classList.contains('active')) {
+          window.initTracking('tracking-react-root');
         }
         
         // Initialize when clicking any dashboard navigation link
@@ -1321,7 +937,20 @@ else:
             // Small timeout to allow the page to become visible first
             setTimeout(() => {
               if (typeof window.initDashboard === 'function') {
-                window.initDashboard('dashboard-root');
+                window.initDashboard('dashboard-react-root');
+              }
+            }, 50);
+          });
+        });
+        
+        // Initialize when clicking any tracking navigation link
+        const trackingNavLinks = document.querySelectorAll('[data-page="tracking"]');
+        trackingNavLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            // Small timeout to allow the page to become visible first
+            setTimeout(() => {
+              if (typeof window.initTracking === 'function') {
+                window.initTracking('tracking-react-root');
               }
             }, 50);
           });

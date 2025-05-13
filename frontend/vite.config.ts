@@ -31,6 +31,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         dashboard: resolve(__dirname, 'src/dashboard.tsx'),
+        tracking: resolve(__dirname, 'src/tracking.tsx'),
       },
       output: {
         entryFileNames: `assets/[name].[hash].js`,
