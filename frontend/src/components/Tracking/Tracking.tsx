@@ -200,7 +200,7 @@ const Tracking: React.FC = () => {
   };
 
   return (
-    <div id="tracking-page" className="page hidden">
+    <div id="tracking-page" className="page">
       <h2 className="text-2xl font-semibold mb-4">Message Tracking</h2>
       
       {/* Messages List */}

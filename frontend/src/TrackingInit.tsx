@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import Tracking from './components/Tracking';
+import Tracking from './components/Tracking/Tracking';
 
 // Store root instances to avoid recreating them
 const rootInstances: Record<string, ReactDOM.Root> = {};
