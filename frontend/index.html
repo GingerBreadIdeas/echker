@@ -351,19 +351,6 @@ else:
         const apiUrl = `${apiBaseUrl}/api/v1`;
         let sidebarCollapsed = false;
         
-        // Get references to embedding visualization elements
-        const embeddingsLoading = document.getElementById('embeddings-loading');
-        const embeddingsEmpty = document.getElementById('embeddings-empty');
-        const embeddingsError = document.getElementById('embeddings-error');
-        const embeddingsErrorMessage = document.getElementById('embeddings-error-message');
-        const embeddingsTryAgain = document.getElementById('embeddings-try-again');
-        const bokehContainer = document.getElementById('bokeh-container');
-        const refreshEmbeddingsBtn = document.getElementById('refresh-embeddings');
-        
-        // Cache for embedding visualization data
-        let embeddingDataCache = null;
-        let embeddingLastFetched = null;
-        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
         
         // Function to show selected page and highlight correct sidebar item
         function navigateToPage(pageId) {
@@ -599,11 +586,6 @@ else:
             const pageId = this.getAttribute('data-page');
             navigateToPage(pageId);
             
-            // Load data for different pages
-            if (pageId === 'anomaly') {
-              console.log("Anomaly page selected, loading embedding visualization");
-              loadEmbeddingVisualization();
-            }
             
             // Update URL hash
             window.location.hash = pageId;
@@ -621,11 +603,6 @@ else:
           if (hash && document.querySelector(`#${hash}-page`)) {
             navigateToPage(hash);
             
-            // Load data for different pages
-            if (hash === 'anomaly') {
-              console.log("URL hash is 'anomaly', loading embedding visualization");
-              loadEmbeddingVisualization();
-            }
           } else if (window.location.hash === '') {
             // Default to dashboard if no hash
             navigateToPage('dashboard');
@@ -710,109 +687,6 @@ else:
         // Initial responsive setup
         handleResponsiveLayout();
         
-        // Embedding visualization functionality - with caching
-        function loadEmbeddingVisualization(forceRefresh = false) {
-          const token = localStorage.getItem('token');
-          if (!token) {
-            embeddingsLoading.classList.add('hidden');
-            embeddingsEmpty.classList.remove('hidden');
-            embeddingsError.classList.add('hidden');
-            bokehContainer.classList.add('hidden');
-            return;
-          }
-          
-          // Check if we have cached data and it's still valid
-          const now = new Date().getTime();
-          if (!forceRefresh && 
-              embeddingDataCache && 
-              embeddingLastFetched && 
-              (now - embeddingLastFetched < CACHE_DURATION)) {
-            console.log("Using cached embedding visualization data");
-            
-            // Use the cached data
-            displayEmbeddingData(embeddingDataCache);
-            return;
-          }
-          
-          // Show loading state
-          embeddingsLoading.classList.remove('hidden');
-          embeddingsEmpty.classList.add('hidden');
-          embeddingsError.classList.add('hidden');
-          bokehContainer.classList.add('hidden');
-          
-          // Fetch embedding data as JSON
-          fetch(`${apiBaseUrl}/api/v1/visualization/message_embeddings_json`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          })
-          .then(response => {
-            if (response.ok) {
-              return response.json();
-            } else {
-              throw new Error(`Failed to fetch embedding data: ${response.status}`);
-            }
-          })
-          .then(data => {
-            console.log("Received Bokeh JSON data:", data);
-            
-            // Update cache with new data
-            embeddingDataCache = data;
-            embeddingLastFetched = now;
-            
-            // Display the data
-            displayEmbeddingData(data);
-          })
-          .catch(error => {
-            console.error("Error loading embedding data:", error);
-            embeddingsLoading.classList.add('hidden');
-            embeddingsError.classList.remove('hidden');
-            embeddingsErrorMessage.textContent = error.message;
-          });
-        }
-        
-        // Helper function to display embedding data
-        function displayEmbeddingData(data) {
-          // Hide loading state
-          embeddingsLoading.classList.add('hidden');
-          
-          // Check for error response
-          if (data.status === "error") {
-            embeddingsError.classList.remove('hidden');
-            embeddingsErrorMessage.textContent = data.message || "Error loading visualization";
-            return;
-          }
-          
-          // Check for empty response
-          if (data.status === "empty") {
-            embeddingsEmpty.classList.remove('hidden');
-            return;
-          }
-          
-          // Clear previous visualization
-          document.getElementById('embedding-plot').innerHTML = '';
-          
-          try {
-            // Properly embed Bokeh using json_item as per documentation
-            Bokeh.embed.embed_item(data, "embedding-plot");
-            
-            // Show container
-            bokehContainer.classList.remove('hidden');
-          } catch (error) {
-            console.error("Error rendering Bokeh visualization:", error);
-            embeddingsError.classList.remove('hidden');
-            embeddingsErrorMessage.textContent = `Error rendering visualization: ${error.message}`;
-          }
-        }
-        
-        // Set up event listeners for embedding visualization
-        if (refreshEmbeddingsBtn) {
-          refreshEmbeddingsBtn.addEventListener('click', () => loadEmbeddingVisualization(true));
-        }
-        
-        if (embeddingsTryAgain) {
-          embeddingsTryAgain.addEventListener('click', () => loadEmbeddingVisualization(true));
-        }
 
         // Listen for window resize events
         window.addEventListener('resize', handleResponsiveLayout);
