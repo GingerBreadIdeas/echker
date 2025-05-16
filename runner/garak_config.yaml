@@ -10,3 +10,7 @@ plugins:
 
 
 
+
+reporting:
+    report_prefix: run_output
+    report_dir: /home/mwm/repositories/GBI/echker/runner

@@ -40,20 +40,3 @@ async def startup_event():
     init_kafka_producer()
     db = next(get_db())
     init_db(db)
-
-from confluent_kafka import Producer
-
-conf = {'bootstrap.servers': 'localhost:9092'}
-producer = Producer(conf)
-
-def delivery_report(err, msg):
-    if err is not None:
-        print('Delivery failed:', err)
-    else:
-        print(f'Message delivered to {msg.topic()} [{msg.partition()}]')
-
-for i in range(10):
-    producer.produce('test-topic', key=str(i), value=f'Message {i}', callback=delivery_report)
-    producer.poll(0)
-
-producer.flush()

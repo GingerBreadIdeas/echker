@@ -16,6 +16,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
 
   backend:
     build: ./backend
@@ -27,9 +29,14 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres/mlechker
       - SECRET_KEY=production_secret_key_change_this
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=29092
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - app-network
+      - echker_kafka-net  # Updated to use the existing network name
 
   frontend:
     build:
@@ -44,6 +51,14 @@ services:
       - VITE_API_URL=http://localhost:8000/api/v1
     depends_on:
       - backend
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
+  echker_kafka-net:
+    external: true  # Use the existing Kafka network

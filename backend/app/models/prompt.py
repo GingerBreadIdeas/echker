@@ -8,7 +8,7 @@ from ..db.database import Base
 
 
 class Prompt(Base):
-    __tablename__ = "chat_messages"
+    __tablename__ = "prompt_check"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
@@ -19,4 +19,4 @@ class Prompt(Base):
     checked = Column(Boolean, default=False)
 
     # Relationship to user
-    user = relationship("User", back_populates="messages")
+    user = relationship("User", back_populates="prompts")

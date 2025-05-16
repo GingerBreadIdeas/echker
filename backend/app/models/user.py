@@ -21,3 +21,4 @@ class User(Base):
     
     # Relationships
     messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
+    prompts = relationship("Prompt", back_populates="user", cascade="all, delete-orphan")
