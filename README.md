@@ -5,19 +5,18 @@ A FastAPI/React application with Kafka-based prompt checking.
 ## Quick Start
 
 ```bash
-# Start Kafka
+# Start Kafka and prompt-save service
 docker compose -f docker-compose.kafka.yml up -d
 
 # Start application
 docker compose up -d
 
-# Run prompt checking services
+# Run prompt checking service
 cd runner
 KAFKA_HOST=localhost KAFKA_PORT=9092 python main.py
-# In another terminal
-cd runner
-KAFKA_HOST=localhost KAFKA_PORT=9092 DB_HOST=localhost DB_NAME=mlechker python prompt_save.py
 ```
+
+The prompt-save service is now containerized and will start automatically with the Kafka services.
 
 ## Environment Variables
 

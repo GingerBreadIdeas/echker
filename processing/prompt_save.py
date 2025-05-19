@@ -5,10 +5,21 @@ import sys
 import os
 from pathlib import Path
 from confluent_kafka import Consumer
-from sqlalchemy import create_engine, Column, Integer, Text, DateTime, ForeignKey, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+# Check environment type to determine import method
+env_type = os.environ.get('MLCHECKER_ENV_TYPE', '')
+
+if env_type == "docker":
+    # In Docker environment, db is mounted at the same level
+    from db.models.prompt import Prompt
+    from db.database import Base
+else:
+    # In local development environment, use relative import
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from backend.app.db.models.prompt import Prompt
+    from backend.app.db.database import Base
 
 # Database configuration
 DB_USER = os.environ.get('DB_USER', 'postgres')
@@ -20,19 +31,6 @@ DB_NAME = os.environ.get('DB_NAME', 'mlechker')
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-
-# Define a simplified Prompt model without foreign keys
-class Prompt(Base):
-    __tablename__ = "prompt_check"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True)  # Removed foreign key constraint
-    created_at = Column(DateTime(timezone=True))
-    content = Column(JSONB)
-    check_results = Column(JSONB, nullable=True)
-    checked = Column(Boolean, default=False)
 
 
 def save_prompt_results(prompt_data, results_data):

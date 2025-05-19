@@ -45,6 +45,27 @@ services:
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     networks:
       - kafka-net
+      
+  prompt-save:
+    build:
+      context: ./processing
+      dockerfile: Dockerfile
+    container_name: prompt-save
+    depends_on:
+      - kafka
+    environment:
+      MLCHECKER_ENV_TYPE: docker
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 29092
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: mlechker
+    volumes:
+      - ./backend/app/db:/app/db
+    networks:
+      - kafka-net
 
 networks:
   kafka-net:

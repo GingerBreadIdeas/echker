@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends
 
-from ....models.user import User
+from ....db.models.user import User
 from ...deps import get_current_user
 
 router = APIRouter()

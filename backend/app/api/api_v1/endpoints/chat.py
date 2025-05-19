@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy.orm import Session
 
 from ....db.database import get_db
-from ....models.message import ChatMessage
+from ....db.models.message import ChatMessage
 from ....schemas.message import ChatMessage as ChatMessageSchema
 from ....schemas.message import ChatMessageCreate, ChatMessageUpdate, ChatMessageList
 from ...deps import get_current_user
-from ....models.user import User
+from ....db.models.user import User
 
 router = APIRouter()
 
