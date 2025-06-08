@@ -17,6 +17,7 @@ interface PromptTest {
     prompt: string;
   };
   checked: boolean;
+  check_results?: any;
 }
 
 const Prompt: React.FC = () => {
@@ -75,6 +76,74 @@ const Prompt: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
+  };
+
+  // Analyze test results to determine if tests passed or failed
+  const analyzeTestResults = (test: PromptTest) => {
+    if (!test.checked || !test.check_results) {
+      return { status: 'pending', color: 'bg-gray-400', passed: 0, total: 0 };
+    }
+
+    try {
+      // Parse the results if it's a string
+      let results = test.check_results;
+      if (typeof results === 'string') {
+        results = JSON.parse(results);
+      }
+
+      // Look for evaluation entries in the raw_results
+      let totalPassed = 0;
+      let totalTests = 0;
+      let hasResults = false;
+
+      if (results.raw_results) {
+        const lines = results.raw_results.split('\n');
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const entry = JSON.parse(line);
+              if (entry.entry_type === 'eval') {
+                hasResults = true;
+                totalPassed += entry.passed || 0;
+                totalTests += entry.total || 0;
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
+        }
+      }
+
+      if (!hasResults) {
+        return { status: 'unknown', color: 'bg-yellow-500', passed: 0, total: 0 };
+      }
+
+      const allPassed = totalPassed === totalTests;
+      return {
+        status: allPassed ? 'passed' : 'failed',
+        color: allPassed ? 'bg-green-500' : 'bg-red-500',
+        passed: totalPassed,
+        total: totalTests
+      };
+    } catch (e) {
+      return { status: 'error', color: 'bg-yellow-500', passed: 0, total: 0 };
+    }
+  };
+
+  // Download report function
+  const downloadReport = (test: PromptTest) => {
+    if (!test.check_results) return;
+
+    const dataStr = JSON.stringify(test.check_results, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `test_report_${test.id}_${test.content.probe}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -277,46 +346,95 @@ const Prompt: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {promptTests.map((test) => (
-                  <div key={test.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                    {/* Clickable header */}
-                    <div 
-                      onClick={() => toggleExpanded(test.id)}
-                      className="p-4 bg-white hover:bg-gray-50 cursor-pointer flex items-center justify-between"
-                    >
-                      <div className="flex items-center space-x-4">
-                        {/* Status indicator */}
-                        <div className="flex items-center">
-                          {test.checked && (
-                            <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                          )}
+                {promptTests.map((test) => {
+                  const testResult = analyzeTestResults(test);
+                  return (
+                    <div key={test.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                      {/* Clickable header */}
+                      <div 
+                        onClick={() => toggleExpanded(test.id)}
+                        className="p-4 bg-white hover:bg-gray-50 cursor-pointer flex items-center justify-between"
+                      >
+                        <div className="flex items-center space-x-4">
+                          {/* Status indicator */}
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 ${testResult.color} rounded-full mr-2`}></div>
+                          </div>
+                          
+                          {/* Test info */}
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {test.content.probe}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {formatDate(test.created_at)} • Model: {test.content.model_id}
+                              {test.checked && testResult.total > 0 && (
+                                <span className="ml-2">• {testResult.passed}/{testResult.total} passed</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         
-                        {/* Test info */}
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {test.content.probe}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {formatDate(test.created_at)} • Model: {test.content.model_id}
-                          </div>
+                        {/* Expand/collapse icon */}
+                        <div className="text-gray-400">
+                          <i className={`fas fa-chevron-${expandedItems.has(test.id) ? 'up' : 'down'}`}></i>
                         </div>
                       </div>
                       
-                      {/* Expand/collapse icon */}
-                      <div className="text-gray-400">
-                        <i className={`fas fa-chevron-${expandedItems.has(test.id) ? 'up' : 'down'}`}></i>
-                      </div>
+                      {/* Expandable content */}
+                      {expandedItems.has(test.id) && (
+                        <div className="p-4 bg-gray-50 border-t border-gray-200">
+                          {test.checked && test.check_results ? (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-gray-900">Test Report</h4>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadReport(test);
+                                  }}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                                >
+                                  <i className="fas fa-download mr-1"></i>
+                                  Download Report
+                                </button>
+                              </div>
+                              
+                              <div className="bg-white p-3 rounded border">
+                                <div className="text-sm">
+                                  <span className="font-medium">Status:</span>
+                                  <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                                    testResult.status === 'passed' ? 'bg-green-100 text-green-800' :
+                                    testResult.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {testResult.status.charAt(0).toUpperCase() + testResult.status.slice(1)}
+                                  </span>
+                                  {testResult.total > 0 && (
+                                    <span className="ml-2 text-gray-600">
+                                      ({testResult.passed}/{testResult.total} tests passed)
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                <div className="mt-2 text-sm text-gray-600">
+                                  <span className="font-medium">Probe:</span> {test.content.probe}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  <span className="font-medium">Model:</span> {test.content.model_supplier} / {test.content.model_id}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-gray-600">
+                              {test.checked ? 'No results available' : 'Test still running...'}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    
-                    {/* Expandable content */}
-                    {expandedItems.has(test.id) && (
-                      <div className="p-4 bg-gray-50 border-t border-gray-200">
-                        <p className="text-gray-600">Content will be added here later...</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
