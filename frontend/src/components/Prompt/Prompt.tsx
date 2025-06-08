@@ -1,10 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface PromptCheckForm {
   prompt_text: string;
   model_id: string;
   model_supplier: string;
   probe: string;
+}
+
+interface PromptTest {
+  id: number;
+  created_at: string;
+  content: {
+    probe: string;
+    model_id: string;
+    model_supplier: string;
+    prompt: string;
+  };
+  checked: boolean;
 }
 
 const Prompt: React.FC = () => {
@@ -16,6 +28,54 @@ const Prompt: React.FC = () => {
     model_supplier: 'ollama',
     probe: 'promptinject.HijackHateHumansMini'
   });
+  const [promptTests, setPromptTests] = useState<PromptTest[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+
+  // Fetch prompt tests
+  const fetchPromptTests = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/prompt_check`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPromptTests(data.prompts || []);
+      } else {
+        console.error('Failed to fetch prompt tests');
+      }
+    } catch (error) {
+      console.error('Error fetching prompt tests:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load tests when switching to tests tab
+  useEffect(() => {
+    if (activeTab === 'tests') {
+      fetchPromptTests();
+    }
+  }, [activeTab]);
+
+  const toggleExpanded = (id: number) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedItems(newExpanded);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -31,7 +91,7 @@ const Prompt: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/prompt_check`, {
+      const response = await fetch(`http://localhost:8000/api/v1/prompt_check`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,6 +111,10 @@ const Prompt: React.FC = () => {
           probe: 'promptinject.HijackHateHumansMini'
         });
         alert('Prompt check submitted successfully!');
+        // Refresh tests list if on tests tab
+        if (activeTab === 'tests') {
+          fetchPromptTests();
+        }
       } else {
         throw new Error('Failed to submit prompt check');
       }
@@ -192,7 +256,59 @@ const Prompt: React.FC = () => {
         {activeTab === 'tests' && (
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Tests</h2>
-            <p className="text-gray-600">View and run your prompt tests here.</p>
+            
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="text-gray-500">Loading tests...</div>
+              </div>
+            ) : promptTests.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No prompt tests found. Create one in the Prepare tab.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {promptTests.map((test) => (
+                  <div key={test.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                    {/* Clickable header */}
+                    <div 
+                      onClick={() => toggleExpanded(test.id)}
+                      className="p-4 bg-white hover:bg-gray-50 cursor-pointer flex items-center justify-between"
+                    >
+                      <div className="flex items-center space-x-4">
+                        {/* Status indicator */}
+                        <div className="flex items-center">
+                          {test.checked && (
+                            <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                          )}
+                        </div>
+                        
+                        {/* Test info */}
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {test.content.probe}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {formatDate(test.created_at)} • Model: {test.content.model_id}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Expand/collapse icon */}
+                      <div className="text-gray-400">
+                        <i className={`fas fa-chevron-${expandedItems.has(test.id) ? 'up' : 'down'}`}></i>
+                      </div>
+                    </div>
+                    
+                    {/* Expandable content */}
+                    {expandedItems.has(test.id) && (
+                      <div className="p-4 bg-gray-50 border-t border-gray-200">
+                        <p className="text-gray-600">Content will be added here later...</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
