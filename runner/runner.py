@@ -47,12 +47,14 @@ def prepare_function(data):
 
 
 def work(data):
+    source_data = data.copy()
     speak_func = prepare_function(data)
     llm_caller.speak = speak_func
     probes = ""
     probe_list = [
-        # "encoding.InjectBase32",
-        "promptinject.HijackHateHumansMini"
+        #"encoding.InjectBase32",
+        #"promptinject.HijackHateHumansMini",
+        source_data["probe"]
     ]
     for probe in probe_list:
         probes += f" --probes {probe}"
