@@ -32,6 +32,9 @@ const Prompt: React.FC = () => {
   const [promptTests, setPromptTests] = useState<PromptTest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+  const [expandedPrompts, setExpandedPrompts] = useState<Set<number>>(new Set());
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Fetch prompt tests
   const fetchPromptTests = async () => {
@@ -72,6 +75,16 @@ const Prompt: React.FC = () => {
       newExpanded.add(id);
     }
     setExpandedItems(newExpanded);
+  };
+
+  const togglePromptExpanded = (id: number) => {
+    const newExpanded = new Set(expandedPrompts);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedPrompts(newExpanded);
   };
 
   const formatDate = (dateString: string) => {
@@ -172,14 +185,11 @@ const Prompt: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         console.log('Prompt check submitted:', result);
-        // Reset form
-        setFormData({
-          prompt_text: '',
-          model_id: 'deepseek-r1:1.5b',
-          model_supplier: 'ollama',
-          probe: 'promptinject.HijackHateHumansMini'
-        });
-        alert('Prompt check submitted successfully!');
+        // Show success message
+        setSuccessMessage('Prompt check submitted successfully! Check the Tests tab to monitor progress.');
+        setErrorMessage(null);
+        // Auto-hide success message after 5 seconds
+        setTimeout(() => setSuccessMessage(null), 5000);
         // Refresh tests list if on tests tab
         if (activeTab === 'tests') {
           fetchPromptTests();
@@ -189,15 +199,48 @@ const Prompt: React.FC = () => {
       }
     } catch (error) {
       console.error('Error submitting prompt check:', error);
-      alert('Error submitting prompt check. Please try again.');
+      setErrorMessage('Error submitting prompt check. Please try again.');
+      setSuccessMessage(null);
+      // Auto-hide error message after 5 seconds
+      setTimeout(() => setErrorMessage(null), 5000);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const clearForm = () => {
+    setFormData({
+      prompt_text: '',
+      model_id: 'deepseek-r1:1.5b',
+      model_supplier: 'ollama',
+      probe: 'promptinject.HijackHateHumansMini'
+    });
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Prompt Testing</h1>
+      
+      {/* Success/Error Message Bar */}
+      {(successMessage || errorMessage) && (
+        <div className={`mb-4 p-3 rounded-md flex items-center justify-between ${
+          successMessage ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700'
+        }`}>
+          <div className="flex items-center">
+            <i className={`fas ${successMessage ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2`}></i>
+            <span>{successMessage || errorMessage}</span>
+          </div>
+          <button
+            onClick={() => {
+              setSuccessMessage(null);
+              setErrorMessage(null);
+            }}
+            className="text-current hover:opacity-75"
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      )}
       
       {/* Tab Navigation */}
       <div className="border-b border-gray-200 mb-6">
@@ -247,6 +290,15 @@ const Prompt: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter your prompt text here..."
                 />
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={clearForm}
+                    className="px-3 py-1 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Clear
+                  </button>
+                </div>
               </div>
 
               {/* Model Supplier */}
@@ -388,16 +440,36 @@ const Prompt: React.FC = () => {
                             <div className="space-y-3">
                               <div className="flex items-center justify-between">
                                 <h4 className="font-medium text-gray-900">Test Report</h4>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    downloadReport(test);
-                                  }}
-                                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-                                >
-                                  <i className="fas fa-download mr-1"></i>
-                                  Download Report
-                                </button>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Pre-fill form with test data and switch to prepare tab
+                                      setFormData({
+                                        prompt_text: test.content.prompt || '',
+                                        model_id: test.content.model_id || 'deepseek-r1:1.5b',
+                                        model_supplier: test.content.model_supplier || 'ollama',
+                                        probe: test.content.probe || 'promptinject.HijackHateHumansMini'
+                                      });
+                                      setActiveTab('prepare');
+                                    }}
+                                    className="px-3 py-1 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm flex items-center"
+                                    title="Edit and retry this test"
+                                  >
+                                    <i className="fas fa-edit mr-1"></i>
+                                    Retry
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      downloadReport(test);
+                                    }}
+                                    className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                                  >
+                                    <i className="fas fa-download mr-1"></i>
+                                    Download Report
+                                  </button>
+                                </div>
                               </div>
                               
                               <div className="bg-white p-3 rounded border">
@@ -423,6 +495,27 @@ const Prompt: React.FC = () => {
                                 <div className="text-sm text-gray-600">
                                   <span className="font-medium">Model:</span> {test.content.model_supplier} / {test.content.model_id}
                                 </div>
+                              </div>
+
+                              {/* Prompt section */}
+                              <div className="bg-white p-3 rounded border">
+                                <div 
+                                  className="flex items-center justify-between cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    togglePromptExpanded(test.id);
+                                  }}
+                                >
+                                  <h5 className="font-medium text-gray-900">Prompt Used</h5>
+                                  <div className="text-gray-400">
+                                    <i className={`fas fa-chevron-${expandedPrompts.has(test.id) ? 'up' : 'down'}`}></i>
+                                  </div>
+                                </div>
+                                {expandedPrompts.has(test.id) && (
+                                  <div className="mt-2 bg-gray-50 p-2 rounded text-sm font-mono max-h-32 overflow-y-auto">
+                                    {test.content.prompt || 'No prompt available'}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ) : (
