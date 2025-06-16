@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to upload sample messages to the Echker API using the deepset/prompt-injections dataset.
+Script to upload sample messages to the ML-Checker API using the deepset/prompt-injections dataset.
 
 Usage:
     python upload_sample_messages.py --token YOUR_API_TOKEN [--url API_URL]
@@ -18,7 +18,7 @@ from datasets import load_dataset
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Upload sample messages to the Echker API')
+    parser = argparse.ArgumentParser(description='Upload sample messages to the ML-Checker API')
     parser.add_argument('--token', required=True, help='API token for authentication')
     parser.add_argument('--url', default='http://localhost:8000/api/v1', help='Base URL for the API')
     return parser.parse_args()
@@ -108,8 +108,8 @@ def main():
         return
     
     # Sample the required number of messages
-    normal_sample = random.sample(normal_messages, min(60, len(normal_messages)))
-    injection_sample = random.sample(injection_messages, min(20, len(injection_messages)))
+    normal_sample = random.sample(normal_messages, min(120, len(normal_messages)))
+    injection_sample = random.sample(injection_messages, min(40, len(injection_messages)))
     
     print(f"Will upload 60 normal messages and 20 prompt injection messages")
     
