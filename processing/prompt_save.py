@@ -39,6 +39,17 @@ class Prompt(Base):
     checked = Column(Boolean, default=False)
 
 
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    content = Column(Text, nullable=False)
+    response = Column(Text, nullable=True)  # Optional response from chatbot
+    is_prompt_injection = Column(Boolean, default=False)  # Flag for prompt injection attacks
+    metrics = Column(JSONB)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 def save_prompt_results(prompt_data, results_data):
     db = SessionLocal()
     try:
@@ -63,6 +74,56 @@ def save_prompt_results(prompt_data, results_data):
         print(f"Error saving prompt results: {e}")
     finally:
         db.close()
+
+def save_message_metrics(data):
+    db = SessionLocal()
+    try:
+        message_id = data.get('id')
+        metrics = data.get('metrics')
+        options = data.get('options')
+        if not message_id:
+            print("Error: No message ID found in data")
+            return
+
+        # Query by ID explicitly
+        message = db.query(ChatMessage).filter(ChatMessage.id == message_id).first()
+        if message:
+            message.metrics = {"metrics": metrics, "options":options}
+            db.commit()
+            print(f"Updated message with id: {message_id}")
+        else:
+            print(f"No message found with id: {message_id}")
+
+    except Exception as e:
+        db.rollback()
+        print(f"Error saving message results: {e}")
+    finally:
+        db.close()
+
+
+
+def process_kafka_message():
+    data = json.loads(msg.value().decode('utf-8'))
+    if data.get("init", False):
+        continue
+
+    match msg.topic():
+        case "save_prompt_check":
+            original_data = data.get("original_data")
+            results = data.get("results")
+            if original_data and results:
+                # Convert results string to JSON if needed
+                try:
+                    results_data = json.loads(results)
+                except json.JSONDecodeError:
+                    # If it's not valid JSON, store as a string in a JSON object
+                    results_data = {"raw_results": results}
+                save_prompt_results(original_data, results_data)
+            else:
+                print("Missing data in message")
+        case "save_message_metrics":
+            save_message_metrics(data)
+
 
 
 if __name__ == "__main__":
@@ -124,7 +185,7 @@ if __name__ == "__main__":
                 sys.exit(1)
 
     # Subscribe to the save_prompt_check topic
-    consumer.subscribe(['save_prompt_check'])
+    consumer.subscribe(['save_prompt_check', "save_message_metrics"])
     print("Subscribed to topic: save_prompt_check")
     print("Waiting for messages...")
 
@@ -137,32 +198,7 @@ if __name__ == "__main__":
                 print("Error:", msg.error())
             else:
                 try:
-                    # Parse the message
-                    data = json.loads(msg.value().decode('utf-8'))
-                    
-                    # Skip initialization messages
-                    if data.get("init", False):
-                        continue
-                        
-                    print("Received results to save")
-                    
-                    # Extract original data and results
-                    original_data = data.get("original_data")
-                    results = data.get("results")
-                    
-                    if original_data and results:
-                        # Convert results string to JSON if needed
-                        try:
-                            results_data = json.loads(results)
-                        except json.JSONDecodeError:
-                            # If it's not valid JSON, store as a string in a JSON object
-                            results_data = {"raw_results": results}
-                            
-                        # Save to database
-                        save_prompt_results(original_data, results_data)
-                    else:
-                        print("Missing data in message")
-                        
+                    process_kafka_message()
                 except json.JSONDecodeError:
                     print(f"Received non-JSON message, ignoring")
                 except Exception as e:

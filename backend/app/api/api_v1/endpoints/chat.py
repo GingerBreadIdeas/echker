@@ -8,10 +8,32 @@ from ....db.models.message import ChatMessage
 from ....schemas.message import ChatMessage as ChatMessageSchema
 from ....schemas.message import ChatMessageCreate, ChatMessageUpdate, ChatMessageList
 from ...deps import get_current_user
+from ....kafka_producer import get_kafka_producer
 from ....db.models.user import User
 
-router = APIRouter()
+import json
+import logging
 
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+default_metrics_options = {
+    "llama_guard": {}
+}
+
+def trigger_metrics_computation(message: ChatMessage, metrics_options):
+    producer = get_kafka_producer()
+    if producer is None:
+        logger.warning("Kafka is not available. Prompt check will not be processed.")
+
+    message = {
+        "id": message.id,
+        "content": message.content,
+        "options": metrics_options
+    }
+    producer.produce("compute_message_metrics", value=json.dumps(message).encode('utf-8'))
+    producer.poll(0)  # Process delivery reports
+    logger.info(f"Successfully sent prompt {message.id} to Kafka for checking")
 
 @router.post("/messages", response_model=ChatMessageSchema)
 def create_message(
@@ -32,7 +54,15 @@ def create_message(
     db.add(message)
     db.commit()
     db.refresh(message)
-    return message
+
+    try:
+        trigger_metrics_computation(message, default_metrics_options)
+    except Exception as e:
+        logger.exception(f"Failed to send prompt to Kafka: {e}")
+        # Continue execution - the API should still work even if Kafka fails
+
+    finally:
+        return message
 
 
 @router.get("/messages", response_model=ChatMessageList)
