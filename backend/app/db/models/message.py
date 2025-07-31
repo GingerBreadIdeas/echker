@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.dialects.postgresql import JSONB
 from ..database import Base
 
 
@@ -13,6 +13,7 @@ class ChatMessage(Base):
     content = Column(Text, nullable=False)
     response = Column(Text, nullable=True)  # Optional response from chatbot
     is_prompt_injection = Column(Boolean, default=False)  # Flag for prompt injection attacks
+    metrics = Column(JSONB)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationship to user

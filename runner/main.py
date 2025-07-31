@@ -1,7 +1,9 @@
 import json
 import os
 from confluent_kafka import Consumer, Producer
-from runner import work
+from garak_runner import work
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+import torch
 
 
 def send_results_to_kafka(producer, jsonl_filepath, original_data):
@@ -39,9 +41,46 @@ def process_prompt_check(msg):
             print(f"Warning: Result file {jsonl_filepath} not found")
 
 
+def upload_metrics(msg: dict, metrics: dict):
+    try:
+        message = {
+            "id": msg['id'],
+            "metrics": metrics,
+            "options": msg['options']
+        }
+        print(f"Sending results to save_message_metrics")
+        producer.produce('save_message_metrics',
+                        key=None,
+                        value=json.dumps(message).encode('utf-8'))
+        producer.flush()
+        print("Results sent successfully")
+    except Exception as e:
+        print(f"Error sending results to Kafka: {e}")
+
+def calculate_metrics(message) -> dict(str):
+    """
+     Respones:
+    {'label': 'INJECTION', 'score': 0.9999992847442627}
+    """
+
+    tokenizer = AutoTokenizer.from_pretrained("ProtectAI/deberta-v3-base-prompt-injection")
+    model = AutoModelForSequenceClassification.from_pretrained("ProtectAI/deberta-v3-base-prompt-injection")
+
+    classifier = pipeline(
+    "text-classification",
+    model=model,
+    tokenizer=tokenizer,
+    truncation=True,
+    max_length=512,
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+    )
+    result = classifier(message)
+    return result[0]
+
+
 def process_compute_message_metrics(msg):
-    #@TODO
-    pass
+    metrics = calculate_metrics(msg.content)
+    upload_metrics(msg, metrics)
 
 if __name__ == "__main__":
     # Get Kafka connection details from environment or use defaults
@@ -57,6 +96,7 @@ if __name__ == "__main__":
     # Create the topics we need
     producer.produce('prompt_check', key=None, value=json.dumps({"init": True}).encode('utf-8'))
     producer.produce('save_prompt_check', key=None, value=json.dumps({"init": True}).encode('utf-8'))
+    producer.produce('save_message_metrics', key=None, value=json.dumps({"init": True}).encode('utf-8'))
     producer.flush(5)
     
     # Now set up the consumer
