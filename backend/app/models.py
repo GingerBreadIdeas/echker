@@ -87,7 +87,6 @@ class Project(Base):
     # Relationships
     organization = relationship("Organization", back_populates="projects")
     sessions = relationship("Session", back_populates="project", cascade="all, delete-orphan")
-    chat_messages = relationship("ChatMessage", back_populates="project", cascade="all, delete-orphan")
     prompts = relationship("Prompt", back_populates="project", cascade="all, delete-orphan")
     tags = relationship("Tag", secondary=project_tag_association, back_populates="projects")
 
@@ -106,8 +105,6 @@ class User(Base):
     )
     
     # Relationships
-    messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
-    prompts = relationship("Prompt", back_populates="user", cascade="all, delete-orphan")
     user_roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
     tags = relationship("Tag", secondary=user_tag_association, back_populates="users")
 
