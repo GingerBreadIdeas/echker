@@ -23,9 +23,9 @@ def trigger_metrics_computation(message: ChatMessage, metrics_options):
     if producer is None:
         logger.warning("Kafka is not available. Prompt check will not be processed.")
 
-    message = {"id": message.id, "content": message.content, "options": metrics_options}
+    message_data = {"id": message.id, "content": message.content, "options": metrics_options}
     producer.produce(
-        "compute_message_metrics", value=json.dumps(message).encode("utf-8")
+        "compute_message_metrics", value=json.dumps(message_data).encode("utf-8")
     )
     producer.poll(0)  # Process delivery reports
     logger.info(f"Successfully sent prompt {message.id} to Kafka for checking")
@@ -78,7 +78,6 @@ def create_message(
     message = ChatMessage(
         session_id=session.id,
         content=message_in.content,
-        response=message_in.response,
         is_prompt_injection=message_in.is_prompt_injection,
     )
     db.add(message)

@@ -100,3 +100,14 @@ def generate_api_token(
         "expires_in": 30 * 24 * 60 * 60,  # seconds
         "username": current_user.username,
     }
+
+
+@router.get("/whoami")
+def whoami(
+    current_user: UserModel = Depends(get_current_user),
+) -> Any:
+    """
+    Returns the username of the authenticated user.
+    This endpoint is designed for API usage with OAuth2 tokens.
+    """
+    return {"username": current_user.username}

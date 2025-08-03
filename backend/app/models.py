@@ -5,6 +5,7 @@ from sqlalchemy import Boolean, Column, Integer, String, Text, DateTime, Foreign
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from sqlalchemy import event
 import enum
 
 from .database import Base
@@ -185,3 +186,37 @@ class Tag(Base):
     sessions = relationship("Session", secondary=session_tag_association, back_populates="tags")
     chat_messages = relationship("ChatMessage", secondary=chat_message_tag_association, back_populates="tags")
     prompts = relationship("Prompt", secondary=prompt_tag_association, back_populates="tags")
+
+
+# Event listener to automatically create default organization and project when user is created
+@event.listens_for(User, 'after_insert')
+def create_default_org_and_project(mapper, connection, target):
+    """
+    Automatically create a default organization and project for new users
+    """
+    # Create default organization
+    org_insert = Organization.__table__.insert().values(
+        name='default',
+        description=f'Default organization for {target.username}',
+        is_active=True
+    )
+    result = connection.execute(org_insert)
+    org_id = result.inserted_primary_key[0]
+    
+    # Create user role linking user to organization
+    user_role_insert = UserRole.__table__.insert().values(
+        user_id=target.id,
+        organization_id=org_id,
+        role=RoleType.ADMIN
+    )
+    connection.execute(user_role_insert)
+    
+    # Create default project in the organization
+    project_insert = Project.__table__.insert().values(
+        name='default',
+        description='Default project',
+        organization_id=org_id,
+        is_default=True,
+        is_active=True
+    )
+    connection.execute(project_insert)
