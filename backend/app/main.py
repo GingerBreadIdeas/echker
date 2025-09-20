@@ -7,7 +7,11 @@ from .routes import api_router
 from .core.config import settings
 from .database import Base, get_db
 from .init_db import init_db
-from .kafka_producer import init_kafka_producer, close_kafka_producer, get_kafka_producer
+from .kafka_producer import (
+    init_kafka_producer,
+    close_kafka_producer,
+    get_kafka_producer,
+)
 from .models import User, Project, UserRole, ChatMessage, Prompt, Tag, ProjectToken
 
 logger = logging.getLogger(__name__)
@@ -27,8 +31,10 @@ app.add_middleware(
 
 # Setup SQLAdmin (only in non-test environments)
 import os
+
 if os.getenv("TEST_ENV", "false").lower() != "true":
     from .admin import setup_admin
+
     admin = setup_admin(app)
 
 # Include API router
@@ -39,15 +45,18 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 async def health_check():
     return {"status": "healthy"}
 
+
 @app.on_event("shutdown")
 def shutdown_event():
     close_kafka_producer()
+
 
 # Initialize database with test data
 @app.on_event("startup")
 async def startup_event():
     # Skip initialization in test environments
     import os
+
     if os.getenv("TEST_ENV", "false").lower() == "true":
         logger.info("Skipping startup initialization (TEST_ENV=true)")
         return
@@ -58,7 +67,9 @@ async def startup_event():
         if get_kafka_producer() is not None:
             logger.info("Kafka connection successful - prompt checks will be processed")
         else:
-            logger.warning("Kafka connection failed - prompt checks will NOT be processed")
+            logger.warning(
+                "Kafka connection failed - prompt checks will NOT be processed"
+            )
     except Exception as e:
         logger.exception(f"Error initializing Kafka producer: {e}")
 

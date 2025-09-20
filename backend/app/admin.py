@@ -9,19 +9,45 @@ def setup_admin(app):
 
     # Admin model views
     class UserAdmin(ModelView, model=User):
-        column_list = [User.id, User.username, User.email, User.is_active, User.is_superuser, User.created_at]
+        column_list = [
+            User.id,
+            User.username,
+            User.email,
+            User.is_active,
+            User.is_superuser,
+            User.created_at,
+        ]
         column_searchable_list = [User.username, User.email]
         column_sortable_list = [User.id, User.username, User.created_at]
 
     class ProjectAdmin(ModelView, model=Project):
-        column_list = [Project.id, Project.name, Project.description, Project.is_default, Project.is_active, Project.created_at]
+        column_list = [
+            Project.id,
+            Project.name,
+            Project.description,
+            Project.is_default,
+            Project.is_active,
+            Project.created_at,
+        ]
         column_searchable_list = [Project.name]
 
     class UserRoleAdmin(ModelView, model=UserRole):
-        column_list = [UserRole.id, UserRole.user_id, UserRole.project_id, UserRole.role, UserRole.created_at]
+        column_list = [
+            UserRole.id,
+            UserRole.user_id,
+            UserRole.project_id,
+            UserRole.role,
+            UserRole.created_at,
+        ]
 
     class ChatMessageAdmin(ModelView, model=ChatMessage):
-        column_list = [ChatMessage.id, ChatMessage.content, ChatMessage.session_id, ChatMessage.is_prompt_injection, ChatMessage.created_at]
+        column_list = [
+            ChatMessage.id,
+            ChatMessage.content,
+            ChatMessage.session_id,
+            ChatMessage.is_prompt_injection,
+            ChatMessage.created_at,
+        ]
         column_searchable_list = [ChatMessage.content]
         column_sortable_list = [ChatMessage.id, ChatMessage.created_at]
 
@@ -29,7 +55,14 @@ def setup_admin(app):
         column_list = [Prompt.id, Prompt.project_id, Prompt.checked, Prompt.created_at]
 
     class TagAdmin(ModelView, model=Tag):
-        column_list = [Tag.id, Tag.name, Tag.description, Tag.color, Tag.is_active, Tag.created_at]
+        column_list = [
+            Tag.id,
+            Tag.name,
+            Tag.description,
+            Tag.color,
+            Tag.is_active,
+            Tag.created_at,
+        ]
         column_searchable_list = [Tag.name]
 
     # Add admin views

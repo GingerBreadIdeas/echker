@@ -17,7 +17,7 @@ def create_project_token(
     *,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    expires_days: int = None
+    expires_days: int = None,
 ) -> Any:
     """
     Create a new API token for the user's project.
@@ -45,7 +45,7 @@ def create_project_token(
         token_hash=token_hash,
         expires_at=expires_at,
         created_by_user_id=current_user.id,
-        is_active=True
+        is_active=True,
     )
 
     db.add(project_token)
@@ -58,7 +58,7 @@ def create_project_token(
         "project_id": project.id,
         "project_name": project.name,
         "expires_at": expires_at,
-        "created_at": project_token.created_at
+        "created_at": project_token.created_at,
     }
 
 
@@ -81,25 +81,30 @@ def list_project_tokens(
         raise HTTPException(status_code=404, detail="User has no valid project")
 
     # Get all tokens for this project
-    tokens = db.query(ProjectToken).filter(
-        ProjectToken.project_id == project.id
-    ).order_by(ProjectToken.created_at.desc()).all()
+    tokens = (
+        db.query(ProjectToken)
+        .filter(ProjectToken.project_id == project.id)
+        .order_by(ProjectToken.created_at.desc())
+        .all()
+    )
 
     token_list = []
     for token in tokens:
-        token_list.append({
-            "token_id": token.id,
-            "is_active": token.is_active,
-            "expires_at": token.expires_at,
-            "created_at": token.created_at,
-            "last_used_at": token.last_used_at,
-            "created_by_username": token.created_by.username
-        })
+        token_list.append(
+            {
+                "token_id": token.id,
+                "is_active": token.is_active,
+                "expires_at": token.expires_at,
+                "created_at": token.created_at,
+                "last_used_at": token.last_used_at,
+                "created_by_username": token.created_by.username,
+            }
+        )
 
     return {
         "tokens": token_list,
         "project_id": project.id,
-        "project_name": project.name
+        "project_name": project.name,
     }
 
 
@@ -108,7 +113,7 @@ def revoke_project_token(
     *,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    token_id: int
+    token_id: int,
 ) -> Any:
     """
     Revoke (deactivate) a project token.
@@ -123,10 +128,11 @@ def revoke_project_token(
         raise HTTPException(status_code=404, detail="User has no valid project")
 
     # Find the token
-    token = db.query(ProjectToken).filter(
-        ProjectToken.id == token_id,
-        ProjectToken.project_id == project.id
-    ).first()
+    token = (
+        db.query(ProjectToken)
+        .filter(ProjectToken.id == token_id, ProjectToken.project_id == project.id)
+        .first()
+    )
 
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")

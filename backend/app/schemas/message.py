@@ -9,6 +9,7 @@ class ChatMessageBase(BaseModel):
     content: str
     session_id: Optional[str] = None
 
+
 class ChatMessageCreate(ChatMessageBase):
     # project_id is determined by the API token, not from request body
     pass

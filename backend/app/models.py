@@ -1,7 +1,19 @@
 """
 SQLAlchemy models for the ML-Checker application.
 """
-from sqlalchemy import Boolean, Column, Integer, String, Text, DateTime, ForeignKey, Enum, Table, JSON
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Integer,
+    String,
+    Text,
+    DateTime,
+    ForeignKey,
+    Enum,
+    Table,
+    JSON,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -17,31 +29,33 @@ JSONPortable = JSON().with_variant(JSONB, "postgresql")
 
 # Association tables for many-to-many relationships with tags
 user_tag_association = Table(
-    'user_tags',
+    "user_tags",
     Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('tags.id'), primary_key=True)
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
 )
 
 chat_message_tag_association = Table(
-    'chat_message_tags',
+    "chat_message_tags",
     Base.metadata,
-    Column('chat_message_id', Integer, ForeignKey('chat_messages.id'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('tags.id'), primary_key=True)
+    Column(
+        "chat_message_id", Integer, ForeignKey("chat_messages.id"), primary_key=True
+    ),
+    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
 )
 
 prompt_tag_association = Table(
-    'prompt_tags',
+    "prompt_tags",
     Base.metadata,
-    Column('prompt_id', Integer, ForeignKey('prompt_check.id'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('tags.id'), primary_key=True)
+    Column("prompt_id", Integer, ForeignKey("prompt_check.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
 )
 
 project_tag_association = Table(
-    'project_tags',
+    "project_tags",
     Base.metadata,
-    Column('project_id', Integer, ForeignKey('projects.id'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('tags.id'), primary_key=True)
+    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
 )
 
 # Removed session_tag_association - sessions are now just string properties
@@ -57,7 +71,7 @@ class Project(Base):
     __tablename__ = "projects"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, default='default')
+    name = Column(String, nullable=False, default="default")
     description = Column(Text, nullable=True)
     is_default = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
@@ -66,11 +80,21 @@ class Project(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     # Relationships
-    prompts = relationship("Prompt", back_populates="project", cascade="all, delete-orphan")
-    chat_messages = relationship("ChatMessage", back_populates="project", cascade="all, delete-orphan")
-    user_roles = relationship("UserRole", back_populates="project", cascade="all, delete-orphan")
-    tokens = relationship("ProjectToken", back_populates="project", cascade="all, delete-orphan")
-    tags = relationship("Tag", secondary=project_tag_association, back_populates="projects")
+    prompts = relationship(
+        "Prompt", back_populates="project", cascade="all, delete-orphan"
+    )
+    chat_messages = relationship(
+        "ChatMessage", back_populates="project", cascade="all, delete-orphan"
+    )
+    user_roles = relationship(
+        "UserRole", back_populates="project", cascade="all, delete-orphan"
+    )
+    tokens = relationship(
+        "ProjectToken", back_populates="project", cascade="all, delete-orphan"
+    )
+    tags = relationship(
+        "Tag", secondary=project_tag_association, back_populates="projects"
+    )
 
 
 class ProjectToken(Base):
@@ -103,9 +127,11 @@ class User(Base):
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    
+
     # Relationships
-    user_roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
+    user_roles = relationship(
+        "UserRole", back_populates="user", cascade="all, delete-orphan"
+    )
     created_tokens = relationship("ProjectToken", back_populates="created_by")
     tags = relationship("Tag", secondary=user_tag_association, back_populates="users")
 
@@ -118,7 +144,7 @@ class UserRole(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     role = Column(Enum(RoleType), nullable=False, default=RoleType.MEMBER)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     # Relationships
     user = relationship("User", back_populates="user_roles")
     project = relationship("Project", back_populates="user_roles")
@@ -132,13 +158,17 @@ class ChatMessage(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     content = Column(Text, nullable=False)
     response = Column(Text, nullable=True)  # Optional response from chatbot
-    is_prompt_injection = Column(Boolean, default=False)  # Flag for prompt injection attacks
+    is_prompt_injection = Column(
+        Boolean, default=False
+    )  # Flag for prompt injection attacks
     metrics = Column(JSONPortable)  # JSON column for metrics (JSONB on PostgreSQL)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     project = relationship("Project", back_populates="chat_messages")
-    tags = relationship("Tag", secondary=chat_message_tag_association, back_populates="chat_messages")
+    tags = relationship(
+        "Tag", secondary=chat_message_tag_association, back_populates="chat_messages"
+    )
 
 
 class Prompt(Base):
@@ -153,7 +183,10 @@ class Prompt(Base):
 
     # Relationships
     project = relationship("Project", back_populates="prompts")
-    tags = relationship("Tag", secondary=prompt_tag_association, back_populates="prompts")
+    tags = relationship(
+        "Tag", secondary=prompt_tag_association, back_populates="prompts"
+    )
+
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -167,33 +200,34 @@ class Tag(Base):
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    
+
     # Many-to-many relationships
     users = relationship("User", secondary=user_tag_association, back_populates="tags")
-    projects = relationship("Project", secondary=project_tag_association, back_populates="tags")
-    chat_messages = relationship("ChatMessage", secondary=chat_message_tag_association, back_populates="tags")
-    prompts = relationship("Prompt", secondary=prompt_tag_association, back_populates="tags")
+    projects = relationship(
+        "Project", secondary=project_tag_association, back_populates="tags"
+    )
+    chat_messages = relationship(
+        "ChatMessage", secondary=chat_message_tag_association, back_populates="tags"
+    )
+    prompts = relationship(
+        "Prompt", secondary=prompt_tag_association, back_populates="tags"
+    )
 
 
 # Event listener to automatically create default project when user is created
-@event.listens_for(User, 'after_insert')
+@event.listens_for(User, "after_insert")
 def create_default_project(mapper, connection, target):
     """
     Automatically create a default project for new users
     """
     project_insert = Project.__table__.insert().values(
-        name='default',
-        description='Default project',
-        is_default=True,
-        is_active=True
+        name="default", description="Default project", is_default=True, is_active=True
     )
 
     result = connection.execute(project_insert)
     project_id = result.inserted_primary_key[0]
-    
+
     user_role_insert = UserRole.__table__.insert().values(
-        user_id=target.id,
-        project_id=project_id,
-        role=RoleType.ADMIN
+        user_id=target.id, project_id=project_id, role=RoleType.ADMIN
     )
     connection.execute(user_role_insert)

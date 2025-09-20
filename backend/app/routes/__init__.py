@@ -11,6 +11,10 @@ api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_router.include_router(chat_router, prefix="/chat", tags=["chat"])
 api_router.include_router(users_router, prefix="/users", tags=["users"])
-api_router.include_router(prompt_check_router, prefix="/prompt-check", tags=["prompt-check"])
-api_router.include_router(visualization_router, prefix="/visualization", tags=["visualization"])
+api_router.include_router(
+    prompt_check_router, prefix="/prompt-check", tags=["prompt-check"]
+)
+api_router.include_router(
+    visualization_router, prefix="/visualization", tags=["visualization"]
+)
 api_router.include_router(tokens_router, prefix="/tokens", tags=["tokens"])

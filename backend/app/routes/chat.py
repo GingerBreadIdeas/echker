@@ -13,6 +13,7 @@ from ..schemas.message import ChatMessage as ChatMessageSchema
 from ..schemas.message import ChatMessageCreate, ChatMessageList, ChatMessageUpdate
 
 from loguru import logger
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -23,8 +24,13 @@ def trigger_metrics_computation(message: ChatMessage, metrics_options):
     producer = get_kafka_producer()
     if producer is None:
         logger.warning("Kafka is not available. Prompt check will not be processed.")
+        return
 
-    message_data = {"id": message.id, "content": message.content, "options": metrics_options}
+    message_data = {
+        "id": message.id,
+        "content": message.content,
+        "options": metrics_options,
+    }
     producer.produce(
         "compute_message_metrics", value=json.dumps(message_data).encode("utf-8")
     )
@@ -67,38 +73,58 @@ def create_message(
 def read_messages(
     *,
     db: Session = Depends(get_db),
+    project_id: Optional[int] = Query(
+        None, description="Project ID to get messages from"
+    ),
+    project_name: Optional[str] = Query(
+        None, description="Project name to get messages from"
+    ),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Retrieve chat messages for the current user's project.
+    Retrieve chat messages for a specific project.
+    User must have access to the project.
+    Specify either project_id or project_name.
     """
-    # Get user's project through UserRole, preferring default project
-    user_role = (
-        db.query(UserRole)
-        .join(Project)
-        .filter(UserRole.user_id == current_user.id)
-        .filter(Project.is_default == True)
-        .first()
-    )
-
-    # Fallback to any project if no default project found
-    if not user_role:
-        user_role = db.query(UserRole).filter(UserRole.user_id == current_user.id).first()
-
-    if not user_role:
-        raise HTTPException(status_code=404, detail="User has no project")
-
-    # Get the project directly from the user role
-    project = user_role.project
-    logger.info(f"Project: {project.id}")
-    if not project:
+    if not project_id and not project_name:
         raise HTTPException(
-            status_code=404, detail="User has no valid project"
+            status_code=400, detail="Either project_id or project_name must be provided"
         )
 
-    # Get all messages for this user's project
+    if project_id and project_name:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide either project_id or project_name, not both",
+        )
+
+    # Find the project by ID or name and check user access
+    if project_id:
+        user_role = (
+            db.query(UserRole)
+            .filter(
+                UserRole.user_id == current_user.id, UserRole.project_id == project_id
+            )
+            .first()
+        )
+    else:  # project_name
+        user_role = (
+            db.query(UserRole)
+            .join(Project)
+            .filter(UserRole.user_id == current_user.id, Project.name == project_name)
+            .first()
+        )
+
+    if not user_role:
+        raise HTTPException(
+            status_code=404, detail="Project not found or access denied"
+        )
+
+    project = user_role.project
+    logger.info(f"Project: {project.id}")
+
+    # Get all messages for this project
     messages = (
         db.query(ChatMessage)
         .filter(ChatMessage.project_id == project.id)
@@ -110,44 +136,84 @@ def read_messages(
     return {"messages": messages}
 
 
+@router.get("/project-messages", response_model=ChatMessageList)
+def read_messages_by_token(
+    *,
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    project: Project = Depends(get_project_from_token),
+) -> Any:
+    """
+    Retrieve chat messages using project token authentication.
+    """
+    logger.info(f"Project: {project.id}")
+
+    # Get all messages for this project
+    messages = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.project_id == project.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    logger.info(f"{messages}")
+    return {"messages": messages}
+
+
+@router.delete("/project-messages/{message_id}", response_model=ChatMessageSchema)
+def delete_message_by_token(
+    *,
+    db: Session = Depends(get_db),
+    message_id: int = Path(..., ge=1),
+    project: Project = Depends(get_project_from_token),
+) -> Any:
+    """
+    Delete a chat message using project token authentication.
+    """
+    # Get message by ID within the project
+    message = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.id == message_id, ChatMessage.project_id == project.id)
+        .first()
+    )
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    db.delete(message)
+    db.commit()
+    return message
+
+
 @router.get("/messages/{message_id}", response_model=ChatMessageSchema)
 def read_message(
     *,
     db: Session = Depends(get_db),
     message_id: int = Path(..., ge=1),
+    project_id: int = Query(..., description="Project ID containing the message"),
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
     Get a specific chat message by ID (must belong to user's project).
     """
-    # Get user's project through UserRole, preferring default project
+    # Check if user has access to the requested project
     user_role = (
         db.query(UserRole)
-        .join(Project)
-        .filter(UserRole.user_id == current_user.id)
-        .filter(Project.is_default == True)
+        .filter(UserRole.user_id == current_user.id, UserRole.project_id == project_id)
         .first()
     )
 
-    # Fallback to any project if no default project found
     if not user_role:
-        user_role = db.query(UserRole).filter(UserRole.user_id == current_user.id).first()
-
-    if not user_role:
-        raise HTTPException(status_code=404, detail="User has no project")
-
-    # Get the project directly from the user role
-    project = user_role.project
-    if not project:
         raise HTTPException(
-            status_code=404, detail="User has no valid project"
+            status_code=404, detail="Project not found or access denied"
         )
 
-    # Get message by ID within the user's project
-    message = db.query(ChatMessage).filter(
-        ChatMessage.id == message_id,
-        ChatMessage.project_id == project.id
-    ).first()
+    # Get message by ID within the specified project
+    message = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.id == message_id, ChatMessage.project_id == project_id)
+        .first()
+    )
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
     return message
@@ -158,39 +224,30 @@ def delete_message(
     *,
     db: Session = Depends(get_db),
     message_id: int = Path(..., ge=1),
+    project_id: int = Query(..., description="Project ID containing the message"),
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
     Delete a chat message.
     """
-    # Get user's project through UserRole, preferring default project
+    # Check if user has access to the requested project
     user_role = (
         db.query(UserRole)
-        .join(Project)
-        .filter(UserRole.user_id == current_user.id)
-        .filter(Project.is_default == True)
+        .filter(UserRole.user_id == current_user.id, UserRole.project_id == project_id)
         .first()
     )
 
-    # Fallback to any project if no default project found
     if not user_role:
-        user_role = db.query(UserRole).filter(UserRole.user_id == current_user.id).first()
-
-    if not user_role:
-        raise HTTPException(status_code=404, detail="User has no project")
-
-    # Get the project directly from the user role
-    project = user_role.project
-    if not project:
         raise HTTPException(
-            status_code=404, detail="User has no valid project"
+            status_code=404, detail="Project not found or access denied"
         )
 
-    # Get message by ID within the user's project
-    message = db.query(ChatMessage).filter(
-        ChatMessage.id == message_id,
-        ChatMessage.project_id == project.id
-    ).first()
+    # Get message by ID within the specified project
+    message = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.id == message_id, ChatMessage.project_id == project_id)
+        .first()
+    )
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
 
@@ -204,40 +261,31 @@ def update_message(
     *,
     db: Session = Depends(get_db),
     message_id: int = Path(..., ge=1),
+    project_id: int = Query(..., description="Project ID containing the message"),
     message_in: ChatMessageUpdate,
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
     Update a chat message's is_prompt_injection flag.
     """
-    # Get user's project through UserRole, preferring default project
+    # Check if user has access to the requested project
     user_role = (
         db.query(UserRole)
-        .join(Project)
-        .filter(UserRole.user_id == current_user.id)
-        .filter(Project.is_default == True)
+        .filter(UserRole.user_id == current_user.id, UserRole.project_id == project_id)
         .first()
     )
 
-    # Fallback to any project if no default project found
     if not user_role:
-        user_role = db.query(UserRole).filter(UserRole.user_id == current_user.id).first()
-
-    if not user_role:
-        raise HTTPException(status_code=404, detail="User has no project")
-
-    # Get the project directly from the user role
-    project = user_role.project
-    if not project:
         raise HTTPException(
-            status_code=404, detail="User has no valid project"
+            status_code=404, detail="Project not found or access denied"
         )
 
-    # Get message by ID within the user's project
-    message = db.query(ChatMessage).filter(
-        ChatMessage.id == message_id,
-        ChatMessage.project_id == project.id
-    ).first()
+    # Get message by ID within the specified project
+    message = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.id == message_id, ChatMessage.project_id == project_id)
+        .first()
+    )
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
 

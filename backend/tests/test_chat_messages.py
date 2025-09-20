@@ -9,7 +9,7 @@ class TestChatMessages:
     """Test suite for chat message functionality."""
 
     def test_create_message_success(
-        self, client: TestClient, db: Session, test_user, project_token_headers
+        self, client: TestClient, db: Session, test_user, test_project, project_token_headers
     ):
         """Test successful message creation using project token."""
         message_data = {
@@ -24,7 +24,8 @@ class TestChatMessages:
             headers=project_token_headers
         )
 
-        test_project = test_user.user_roles.first()
+        # The message should be in the project that the token belongs to
+        # The project_token_headers uses test_project, not the auto-created default project
         assert response.status_code == 200
         data = response.json()
         assert data["content"] == message_data["content"]
@@ -111,7 +112,7 @@ class TestChatMessages:
             db.add(message)
         db.commit()
 
-        response = client.get("/api/v1/chat/messages", headers=auth_headers)
+        response = client.get(f"/api/v1/chat/messages?project_id={default_project.id}", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert "messages" in data
@@ -142,7 +143,7 @@ class TestChatMessages:
 
         # Test with limit
         response = client.get(
-            "/api/v1/chat/messages?limit=2",
+            f"/api/v1/chat/messages?project_id={test_project.id}&limit=2",
             headers=auth_headers
         )
         assert response.status_code == 200
@@ -151,7 +152,7 @@ class TestChatMessages:
 
         # Test with skip and limit
         response = client.get(
-            "/api/v1/chat/messages?skip=2&limit=2",
+            f"/api/v1/chat/messages?project_id={test_project.id}&skip=2&limit=2",
             headers=auth_headers
         )
         assert response.status_code == 200
@@ -162,7 +163,7 @@ class TestChatMessages:
         self, client: TestClient, test_user, test_project, auth_headers
     ):
         """Test message retrieval when no messages exist."""
-        response = client.get("/api/v1/chat/messages", headers=auth_headers)
+        response = client.get(f"/api/v1/chat/messages?project_id={test_project.id}", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -184,7 +185,7 @@ class TestChatMessages:
         db.refresh(message)
 
         response = client.get(
-            f"/api/v1/chat/messages/{message.id}",
+            f"/api/v1/chat/messages/{message.id}?project_id={test_project.id}",
             headers=auth_headers
         )
 
@@ -198,7 +199,7 @@ class TestChatMessages:
         self, client: TestClient, test_user, test_project, auth_headers
     ):
         """Test retrieval of non-existent message."""
-        response = client.get("/api/v1/chat/messages/999", headers=auth_headers)
+        response = client.get(f"/api/v1/chat/messages/999?project_id={test_project.id}", headers=auth_headers)
         assert response.status_code == 404
 
     def test_project_isolation(
@@ -235,24 +236,24 @@ class TestChatMessages:
         )
         assert response2.status_code == 200
 
-        # User 1 should only see their message
-        response1 = client.get("/api/v1/chat/messages", headers=auth_headers)
+        # User 1 should only see their message (from test_project)
+        response1 = client.get(f"/api/v1/chat/messages?project_id={test_project.id}", headers=auth_headers)
         assert response1.status_code == 200
         data1 = response1.json()
         assert len(data1["messages"]) == 1
         assert data1["messages"][0]["content"] == "User 1 message"
 
-        # User 2 should only see their message
-        response2 = client.get("/api/v1/chat/messages", headers=auth_headers2)
+        # User 2 should only see their message (from test_project2)
+        response2 = client.get(f"/api/v1/chat/messages?project_id={test_project2.id}", headers=auth_headers2)
         assert response2.status_code == 200
         data2 = response2.json()
         assert len(data2["messages"]) == 1
         assert data2["messages"][0]["content"] == "User 2 message"
 
         # User 1 should not be able to access User 2's message by ID
-        message2_id = response2.json()["id"]
+        message2_id = data2["messages"][0]["id"]
         response = client.get(
-            f"/api/v1/chat/messages/{message2_id}",
+            f"/api/v1/chat/messages/{message2_id}?project_id={test_project.id}",
             headers=auth_headers
         )
         assert response.status_code == 404
@@ -274,7 +275,7 @@ class TestChatMessages:
         update_data = {"is_prompt_injection": True}
 
         response = client.patch(
-            f"/api/v1/chat/messages/{message.id}",
+            f"/api/v1/chat/messages/{message.id}?project_id={test_project.id}",
             json=update_data,
             headers=auth_headers
         )
@@ -300,7 +301,7 @@ class TestChatMessages:
         message_id = message.id
 
         response = client.delete(
-            f"/api/v1/chat/messages/{message_id}",
+            f"/api/v1/chat/messages/{message_id}?project_id={test_project.id}",
             headers=auth_headers
         )
 
@@ -328,7 +329,7 @@ class TestChatMessages:
 
         # User 1 tries to delete User 2's message
         response = client.delete(
-            f"/api/v1/chat/messages/{message.id}",
+            f"/api/v1/chat/messages/{message.id}?project_id={test_project2.id}",
             headers=auth_headers
         )
 

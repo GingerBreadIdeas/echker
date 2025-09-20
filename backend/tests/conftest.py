@@ -178,25 +178,6 @@ def auth_headers2(test_user2):
 
 
 @pytest.fixture
-def project_token(db, test_project, test_user):
-    """Create a project token for testing API access."""
-    raw_token, token_hash = generate_project_token()
-
-    project_token = ProjectToken(
-        project_id=test_project.id,
-        token_hash=token_hash,
-        created_by_user_id=test_user.id,
-        is_active=True
-    )
-    db.add(project_token)
-    db.commit()
-    db.refresh(project_token)
-
-    # Return the raw token for use in tests
-    return raw_token
-
-
-@pytest.fixture
 def project_token_headers(project_token):
     """Headers with project token for API testing."""
     return {"Authorization": f"Bearer {project_token}"}

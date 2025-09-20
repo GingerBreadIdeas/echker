@@ -49,7 +49,9 @@ def get_current_user(
     return user
 
 
-def get_current_active_superuser(current_user: User = Depends(get_current_user)) -> User:
+def get_current_active_superuser(
+    current_user: User = Depends(get_current_user),
+) -> User:
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -59,8 +61,7 @@ def get_current_active_superuser(current_user: User = Depends(get_current_user))
 
 
 def get_project_from_token(
-    db: Session = Depends(get_db),
-    authorization: Optional[str] = Header(None)
+    db: Session = Depends(get_db), authorization: Optional[str] = Header(None)
 ) -> Project:
     """Get project from API token authentication.
 
@@ -86,9 +87,7 @@ def get_project_from_token(
         )
 
     # Try to find matching project token
-    project_tokens = db.query(ProjectToken).filter(
-        ProjectToken.is_active == True
-    ).all()
+    project_tokens = db.query(ProjectToken).filter(ProjectToken.is_active == True).all()
 
     for pt in project_tokens:
         if verify_project_token(token, pt.token_hash):
@@ -112,8 +111,7 @@ def get_project_from_token(
 
 
 def get_current_user_or_project(
-    db: Session = Depends(get_db),
-    authorization: Optional[str] = Header(None)
+    db: Session = Depends(get_db), authorization: Optional[str] = Header(None)
 ) -> Union[tuple[User, None], tuple[None, Project]]:
     """Get either current user (JWT) or project (API token).
 
@@ -149,9 +147,7 @@ def get_current_user_or_project(
         pass
 
     # Then try project token
-    project_tokens = db.query(ProjectToken).filter(
-        ProjectToken.is_active == True
-    ).all()
+    project_tokens = db.query(ProjectToken).filter(ProjectToken.is_active == True).all()
 
     for pt in project_tokens:
         if verify_project_token(token, pt.token_hash):
