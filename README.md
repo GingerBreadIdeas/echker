@@ -10,6 +10,12 @@ A FastAPI/React application with Kafka-based prompt checking.
 cp .env.example .env
 ```
 
+load the .env for external variables:
+
+``` bash
+source .env
+```
+
 ### Option 1: Full Stack with Kafka (for prompt checks)
 
 ```bash
@@ -45,14 +51,5 @@ The application will start with Kafka functionality disabled, but all other feat
 ## Filling in with examplary data
 
 Use `uv run scripts/upload_sample_messages.py --token {insert token here}` to fill in the examplary data
-
-### Prompt Checking Services
-- `KAFKA_HOST`: Kafka address (default: localhost)
-- `KAFKA_PORT`: Kafka port (default: 9092)
-- `DB_HOST`: PostgreSQL host (default: localhost)
-- `DB_PORT`: PostgreSQL port (default: 5432)
-- `DB_USER`: PostgreSQL user (default: postgres)
-- `DB_PASSWORD`: PostgreSQL password (default: postgres)
-- `DB_NAME`: PostgreSQL database (default: ml-checker)
 
 
