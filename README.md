@@ -4,14 +4,23 @@ A FastAPI/React application with Kafka-based prompt checking.
 
 ## Quick Start
 
+### Setup the env variables:
+
+```
+cp .env.example .env
+```
+
+load the .env for external variables:
+
+``` bash
+source .env
+```
+
 ### Option 1: Full Stack with Kafka (for prompt checks)
 
 ```bash
-# Start Kafka and prompt-save service first
-docker compose -f docker-compose.kafka.yml up -d
-
 # Then start the main application 
-docker compose up -d
+docker compose up
 
 # Run prompt checking service
 cd runner
@@ -22,56 +31,25 @@ The prompt-save service is now containerized and will start automatically with t
 
 ### Option 2: Basic Stack without Kafka
 
-If you don't need the prompt checking functionality, you can run just the core application:
+If you don't need heavy duty stuff:
 
 ```bash
 # Start just the core application (without Kafka)
-docker compose up
+docker compose -f docker-compose-no-kafka.yml up
 ```
 
 Dev stack with docker:
 
+### Option 3: Full Stack for developement
 
 ```bash
-# Start just the core application (without Kafka)
 docker compose -f docker-compose.yml -f docker-compose-dev.yml up
 ```
 
 The application will start with Kafka functionality disabled, but all other features will work normally.
 
-## Environment Variables
+## Filling in with examplary data
 
-### Prompt Checking Services
-- `KAFKA_HOST`: Kafka address (default: localhost)
-- `KAFKA_PORT`: Kafka port (default: 9092)
-- `DB_HOST`: PostgreSQL host (default: localhost)
-- `DB_PORT`: PostgreSQL port (default: 5432)
-- `DB_USER`: PostgreSQL user (default: postgres)
-- `DB_PASSWORD`: PostgreSQL password (default: postgres)
-- `DB_NAME`: PostgreSQL database (default: ml-checker)
+Use `uv run scripts/upload_sample_messages.py --token {insert token here}` to fill in the examplary data
 
-## Developement new
-
-- Run kafka compose
-- ssh -R 9092 to strong machine
-- Run the runner main.py in separate stron maching
-- run backend
-
-## Development old
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Backend
-```bash
-cd backend
-uv venv .venv
-source .venv/bin/activate
-uv pip install -r requirements-dev.txt
-uvicorn app.main:app --reload
-```
 
