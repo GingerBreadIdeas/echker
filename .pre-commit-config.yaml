@@ -11,5 +11,5 @@ repos:
     rev: 5.13.2
     hooks:
       - id: isort
-        args: ['--check-only', '--diff', '--profile=black', '--line-length=88']
+        args: ['--check-only', '--diff', '--profile=black', '--line-length=79']
         files: ^backend/
