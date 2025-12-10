@@ -8,7 +8,7 @@ on:
       - '.github/workflows/code-quality.yml'
 
 jobs:
-  lint:
+  blackisort:
     runs-on: ubuntu-latest
 
     steps:
