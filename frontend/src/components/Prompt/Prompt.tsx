@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../config/api';
 
 interface PromptCheckForm {
   prompt_text: string;
@@ -44,7 +45,7 @@ const Prompt: React.FC = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/prompt-check?project_id=1`, {
+      const response = await fetch(`${API_URL}/prompt-check?project_id=1`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -176,7 +177,7 @@ const Prompt: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/prompt-check`, {
+      const response = await fetch(`${API_URL}/prompt-check`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -230,7 +231,7 @@ const Prompt: React.FC = () => {
     setDeletingId(testId);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/prompt-check/${testId}`, {
+      const response = await fetch(`${API_URL}/prompt-check/${testId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
