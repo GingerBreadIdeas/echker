@@ -1,10 +1,6 @@
 #!/bin/sh
 set -e
 
-# Process environment variables
-echo "VITE_BACKEND_HOST=$VITE_BACKEND_HOST" > .env
-echo "VITE_API_PATH=$VITE_API_PATH" >> .env
-
 echo "Backend host: $VITE_BACKEND_HOST"
 echo "API path: $VITE_API_PATH"
 
