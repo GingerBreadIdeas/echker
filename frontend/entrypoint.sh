@@ -2,11 +2,11 @@
 set -e
 
 # Process environment variables
-if [ -n "$VITE_API_URL" ]; then
-    echo "Setting API URL to $VITE_API_URL"
-    # Create or update .env file with environment variables
-    echo "VITE_API_URL=$VITE_API_URL" > .env
-fi
+echo "VITE_BACKEND_HOST=$VITE_BACKEND_HOST" > .env
+echo "VITE_API_PATH=$VITE_API_PATH" >> .env
+
+echo "Backend host: $VITE_BACKEND_HOST"
+echo "API path: $VITE_API_PATH"
 
 # Install any new dependencies if package.json has changed
 if [ -f "/app/package.json" ]; then
