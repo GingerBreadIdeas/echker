@@ -376,6 +376,7 @@ const Prompt: React.FC = () => {
                 >
                   <option value="deepseek-r1:1.5b">deepseek-r1:1.5b</option>
                   <option value="llama3.2:3b">llama3.2:3b</option>
+                  <option value="qwen3:0.6b">qwen3:0.6b</option>
                   <option value="gpt-4o-mini">gpt-4o-mini</option>
                   <option value="claude-3-haiku">claude-3-haiku</option>
                 </select>
