@@ -177,6 +177,7 @@ const Prompt: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
+      console.log(`${API_URL}/prompt-check`);
       const response = await fetch(`${API_URL}/prompt-check`, {
         method: 'POST',
         headers: {
